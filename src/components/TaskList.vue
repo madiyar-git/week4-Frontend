@@ -9,7 +9,7 @@ const tasks = defineModel<Task[]>({required: true})
 defineEmits<{
   'delete': [TaskId: number]
   'update': [taskId: number, fields: Partial<Task>]
-  'bulk-action': [action: 'toggle_all' | 'clear_completed_local' | 'clear_all_local']
+  'bulk-action': [action: 'toggle_all' | 'clear_completed' | 'clear_all']
   'create-task': []
 }>()
 
@@ -28,14 +28,14 @@ const completedCount = computed(() =>{
             
             <div class="bulk-actions" v-if="tasks.length > 0">
                 <button @click="$emit('bulk-action', 'toggle_all')" class="bulk-btn success">
-                    {{ tasks.every(t => t.completed) ? 'Mark done' : 'Mark active' }}
+                      Mark all
                 </button>
                 
-                <button @click="$emit('bulk-action', 'clear_completed_local')" class="bulk-btn warning">
+                <button @click="$emit('bulk-action', 'clear_completed')" class="bulk-btn warning">
                     Delete done tasks
                 </button>
                 
-                <button @click="$emit('bulk-action', 'clear_all_local')" class="bulk-btn danger">
+                <button @click="$emit('bulk-action', 'clear_all')" class="bulk-btn danger">
                     Delete all
                 </button>
             </div>
@@ -78,7 +78,6 @@ const completedCount = computed(() =>{
   font-weight: bold;
   color: #b3b3b3;
   letter-spacing: 0.5px;
-  text-transform: uppercase;
 }
 
 .bulk-actions {
