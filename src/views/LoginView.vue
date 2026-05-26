@@ -1,27 +1,17 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRouter,useRoute } from 'vue-router'
-const route = useRoute() // подключили текущий роут
-
-const successMessage = ref<string | null>(null)
-
-onMounted(() => {
-  // Если пришли со страницы регистрации, там будет ?registered=1
-  if (route.query.registered === '1') {
-    successMessage.value = 'Вы успешно зарегистрированы! Теперь войдите.'
-    
-    // Чистим query параметры из урла, чтобы при обновлении страницы плашка исчезала
-    router.replace({ query: {} }) 
-  }
-})
+import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()
+const route = useRoute() 
 
 const username = ref<string>('')
 const password = ref<string>('')
 
 const isLoading = ref<boolean>(false)
 const error = ref<string | null>(null)
+
+const successMessage = ref<string | null>(null)
 
 const isFormValid = computed<boolean>(() => {
     const isUsernameValid = username.value.trim().length >= 3
@@ -46,10 +36,24 @@ async function handleSubmit() {
   }
 }
 
+onMounted(() => {
+  if (route.query.registered === '1') {
+    successMessage.value = 'You have successfully registered! Please log in now.'
+    setTimeout(() => {
+      router.replace({ query: {} })
+    }, 3000)
+  }
+})
+
 </script>
 
 <template>
   <div class="login-container">
+
+    <div v-if="successMessage" class="success-banner">
+        {{ successMessage }}
+    </div>
+
     <form @submit.prevent="handleSubmit" class="login-form">
       <h2>Sign in</h2>
 
@@ -96,10 +100,23 @@ async function handleSubmit() {
 <style scoped>
 .login-container {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   min-height: 60vh;
   width: 100%;
+}
+.success-banner {
+  background-color: #14321a;
+  border: 1px solid #1db954;
+  color: #1db954;
+  padding: 12px 24px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  margin-bottom: 20px;
+  max-width: 400px;
+  text-align: center;
 }
 
 .login-form {
