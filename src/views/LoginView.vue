@@ -1,16 +1,22 @@
 <script setup lang="ts">
+import { useAuthStore } from '@/stores/auth'
+import type { AxiosError } from 'axios'
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
+interface DjangoErrorData {
+  detail?: string
+}
+
 const router = useRouter()
 const route = useRoute() 
+const auth = useAuthStore()
 
 const username = ref<string>('')
 const password = ref<string>('')
 
 const isLoading = ref<boolean>(false)
 const error = ref<string | null>(null)
-
 const successMessage = ref<string | null>(null)
 
 const isFormValid = computed<boolean>(() => {
@@ -26,15 +32,14 @@ async function handleSubmit() {
   error.value = null
   
   try {
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
-    localStorage.setItem('access_token', 'test_token_v1')
+    await auth.login(username.value, password.value)
     
     const redirectPath = route.query.redirect as string || '/tasks'
     
     router.push(redirectPath)
-  } catch {
-    error.value = 'Login error'
+  } catch(err: unknown) {
+    const axiosError = err as AxiosError<DjangoErrorData>
+    error.value = axiosError.response?.data?.detail || 'Login error'
   } finally {
     isLoading.value = false
   }

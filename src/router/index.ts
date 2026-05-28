@@ -15,6 +15,7 @@ const router = createRouter({
   ],
 })
 
+//TODO: после useAuthStore переписать
 router.beforeEach((to, from, next) => {
   const requiresAuth = to.matched.some(r => r.meta.requiresAuth)
   const hasToken = !!localStorage.getItem('access_token')

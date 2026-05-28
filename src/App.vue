@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { RouterLink, RouterView, useRouter } from 'vue-router'
+import { useAuthStore } from './stores/auth'
+import { storeToRefs } from 'pinia'
 
 const router = useRouter()
+const authStore = useAuthStore()
 
-const isAuthenticated = computed<boolean>(() => {
-  return !!localStorage.getItem('access_token')
-})
+const { isAuthenticated, username } = storeToRefs(authStore)
+const { logout } = authStore
 
-function handleLogout() {
-  localStorage.removeItem('access_token')
-  
-  router.replace({ name: 'login' })
+function handleLogout(): void {
+  logout()         
+  router.push('/login') 
 }
 </script>
 
@@ -22,12 +22,16 @@ function handleLogout() {
       
       <nav class="nav-bar">
         <RouterLink v-if="isAuthenticated" to="/tasks" class="nav-link">Tasks</RouterLink>
+        
         <RouterLink v-if="!isAuthenticated" to="/login" class="nav-link">Login</RouterLink>
         <RouterLink v-if="!isAuthenticated" to="/register" class="nav-link">Registration</RouterLink>
         
-        <button v-if="isAuthenticated" @click="handleLogout" class="logout-btn">
-          Log out
-        </button>
+        <div v-if="isAuthenticated" class="user-menu">
+          <span class="username-display">Привет, {{ username }}</span>
+          <button @click="handleLogout" class="logout-btn">
+            Log out
+          </button>
+        </div>
       </nav>
     </header>
 
@@ -74,6 +78,19 @@ h1 {
   margin-bottom: 20px;
 }
 
+.user-menu {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.username-display {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #b3b3b3;
+  padding-left: 8px;
+}
+
 .logout-btn {
   background: none;
   border: none;
@@ -93,6 +110,7 @@ h1 {
 
 .nav-bar {
   display: flex;
+  align-items: center;
   gap: 16px;
   background-color: #181818;
   padding: 8px 16px;

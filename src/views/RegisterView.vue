@@ -1,8 +1,16 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router';
+import type { AxiosError } from 'axios'
+
+interface DjangoRegisterErrorData {
+  username?: string[]
+  detail?: string
+}
 
 const router = useRouter()
+const auth = useAuthStore()
 
 const username = ref<string>('')
 const password = ref<string>('')
@@ -56,18 +64,21 @@ async function handleSubmit() {
     isLoading.value = true
     localError.value = null
     try {
-        await new Promise(r => setTimeout(r, 500))
+        await auth.register(username.value, password.value)
         router.push(
             { 
                 name: 'login',
                 query: { registered: '1' }
             })
-    } catch (e: unknown) {
-        if (e instanceof Error){
-            localError.value = e.message
-        }else{
-            localError.value = 'Registration error'
+    } catch (err) {
+        const axiosError = err as AxiosError<DjangoRegisterErrorData>
+        const backendUsernameError = axiosError.response?.data?.username?.[0]
+        if (backendUsernameError) {
+            localError.value = backendUsernameError
+        } else {
+            localError.value = axiosError.response?.data?.detail || 'Registration error'
         }
+
         } finally {
         isLoading.value = false
     }
