@@ -14,4 +14,15 @@ const router = createRouter({
     { path: '/:pathMatch(.*)*', name: 'not-found', component: () => import('@/views/NotFoundView.vue') },
   ],
 })
+
+router.beforeEach((to, from, next) => {
+  const requiresAuth = to.matched.some(r => r.meta.requiresAuth)
+  const hasToken = !!localStorage.getItem('access_token')
+  if (requiresAuth && !hasToken) {
+    next({ name: 'login', query: { redirect: to.fullPath } })
+  } else {
+    next()
+  }
+})
+
 export default router

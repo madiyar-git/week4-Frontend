@@ -1,5 +1,18 @@
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
+import { computed } from 'vue'
+import { RouterLink, RouterView, useRouter } from 'vue-router'
+
+const router = useRouter()
+
+const isAuthenticated = computed<boolean>(() => {
+  return !!localStorage.getItem('access_token')
+})
+
+function handleLogout() {
+  localStorage.removeItem('access_token')
+  
+  router.replace({ name: 'login' })
+}
 </script>
 
 <template>
@@ -8,9 +21,13 @@ import { RouterLink, RouterView } from 'vue-router'
       <h1>Task Manager</h1>
       
       <nav class="nav-bar">
-        <RouterLink to="/tasks" class="nav-link">Задачи</RouterLink>
-        <RouterLink to="/login" class="nav-link">Войти</RouterLink>
-        <RouterLink to="/register" class="nav-link">Регистрация</RouterLink>
+        <RouterLink v-if="isAuthenticated" to="/tasks" class="nav-link">Tasks</RouterLink>
+        <RouterLink v-if="!isAuthenticated" to="/login" class="nav-link">Login</RouterLink>
+        <RouterLink v-if="!isAuthenticated" to="/register" class="nav-link">Registration</RouterLink>
+        
+        <button v-if="isAuthenticated" @click="handleLogout" class="logout-btn">
+          Log out
+        </button>
       </nav>
     </header>
 
@@ -55,6 +72,23 @@ h1 {
   font-weight: bold;
   letter-spacing: -0.5px;
   margin-bottom: 20px;
+}
+
+.logout-btn {
+  background: none;
+  border: none;
+  color: #ff4d4f; 
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  cursor: pointer;
+  border-radius: 14px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.logout-btn:hover {
+  background-color: #4a1d24;
+  color: #feb2b2;
 }
 
 .nav-bar {

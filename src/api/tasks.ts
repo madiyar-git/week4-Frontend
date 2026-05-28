@@ -27,7 +27,3 @@ export async function updateTask(id: number, partialTask: Partial<Task>): Promis
 export async function deleteTask(id: number): Promise<void> {
   await api.delete(`/tasks/${id}/`)
 }
-// Mark/Delete all, Delete done 
-// export async function bulkTaskAction(action: 'clear_all' | 'complete_all' | 'clear_completed'): Promise<void> {
-//   await api.post('/tasks/bulk/', { action })
-// }

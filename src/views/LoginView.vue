@@ -20,18 +20,22 @@ const isFormValid = computed<boolean>(() => {
 }) 
 
 async function handleSubmit() {
+  if (!isFormValid.value || isLoading.value) return
+
   isLoading.value = true
   error.value = null
+  
   try {
-    await new Promise(r => setTimeout(r, 500))
-    router.push({ name: 'tasks' })
-  } catch (e: unknown) {
-    if (e instanceof Error){
-        error.value = e.message
-    }else{
-        error.value = 'Login error'
-    }
-    } finally {
+    await new Promise(resolve => setTimeout(resolve, 500))
+    
+    localStorage.setItem('access_token', 'test_token_v1')
+    
+    const redirectPath = route.query.redirect as string || '/tasks'
+    
+    router.push(redirectPath)
+  } catch {
+    error.value = 'Login error'
+  } finally {
     isLoading.value = false
   }
 }
