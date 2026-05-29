@@ -2,15 +2,18 @@
 import { RouterLink, RouterView, useRouter } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import { storeToRefs } from 'pinia'
+import { useTaskStore } from './stores/tasks'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const tasksStore = useTaskStore()
 
 const { isAuthenticated, username } = storeToRefs(authStore)
 const { logout } = authStore
 
 function handleLogout(): void {
-  logout()         
+  logout()
+  tasksStore.reset()
   router.push('/login') 
 }
 </script>

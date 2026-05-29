@@ -1,4 +1,6 @@
+import { useAuthStore } from '@/stores/auth'
 import { createRouter, createWebHistory } from 'vue-router'
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -15,12 +17,12 @@ const router = createRouter({
   ],
 })
 
-//TODO: после useAuthStore переписать
 router.beforeEach((to, from, next) => {
-  const requiresAuth = to.matched.some(r => r.meta.requiresAuth)
-  const hasToken = !!localStorage.getItem('access_token')
-  if (requiresAuth && !hasToken) {
-    next({ name: 'login', query: { redirect: to.fullPath } })
+  const auth = useAuthStore()
+  if (to.meta.requiresAuth && !auth.isAuthenticated) {
+    next('/login') 
+  } else if ((to.path === '/login' || to.path === '/register') && auth.isAuthenticated) {
+    next('/tasks') 
   } else {
     next()
   }
