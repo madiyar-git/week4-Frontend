@@ -1,48 +1,213 @@
-# vue-project
+# Task Manager Web App (Frontend)
 
-This template should help get you started developing with Vue 3 in Vite.
+Клиентская часть SPA-приложения для управления персональными задачами.
+Интерфейс полностью интегрирован с JWT-авторизацией бэкенда и поддерживает бесшовное обновление пользовательской сессии.
 
-## Recommended IDE Setup
+---
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+# Стек технологий
 
-## Recommended Browser Setup
+* **Фреймворк:** Vue 3 (`Composition API`, `<script setup>`)
+* **Сборщик:** Vite
+* **Язык:** TypeScript (строгая типизация без использования `any`)
+* **Управление состоянием:** Pinia
+* **Маршрутизация:** Vue Router
+* **HTTP-клиент:** Axios
+* **Авторизация:** JWT (Access + Refresh Tokens)
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+---
 
-## Type Support for `.vue` Imports in TS
+# Архитектура авторизации (JWT Flow)
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+В приложении реализована полноценная система автоматического обновления пользовательской сессии через Axios Interceptors.
 
-## Customize configuration
+## 1. Автоматическая подстановка токена
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+`Request Interceptor` автоматически добавляет:
 
-## Project Setup
+```http id="vhmkh4"
+Authorization: Bearer <access_token>
+```
 
-```sh
+во все защищённые API-запросы.
+
+---
+
+## 2. Очередь параллельных запросов
+
+Если сервер возвращает:
+
+```http id="h7wnfq"
+401 Unauthorized
+```
+
+это означает, что `access_token` истёк.
+
+В таком случае:
+
+* новые запросы временно ставятся в очередь;
+* выполняется только один запрос на обновление токена;
+* предотвращается множественный `refresh` одновременно.
+
+---
+
+## 3. Бесшовное обновление сессии
+
+Клиент автоматически отправляет запрос:
+
+```http id="ccyjlwm"
+POST /api/token/refresh/
+```
+
+Если `refresh_token` валиден:
+
+* приложение получает новый `access_token`;
+* токены обновляются в `localStorage`;
+* все замороженные запросы автоматически повторяются;
+* пользователь не теряет сессию и не замечает обновления.
+
+---
+
+## 4. Защита от невалидной сессии
+
+Если `refresh_token` тоже истёк или невалиден:
+
+* `localStorage` полностью очищается;
+* Pinia-store сбрасывается;
+* пользователь автоматически перенаправляется на:
+
+```text id="v2ngh6"
+/login
+```
+
+---
+
+# Локальный запуск проекта
+
+## 1. Установка зависимостей
+
+```bash id="3h6j3r"
 npm install
 ```
 
-### Compile and Hot-Reload for Development
+---
 
-```sh
+## 2. Запуск development-сервера
+
+```bash id="m1sru6"
 npm run dev
 ```
 
-### Type-Check, Compile and Minify for Production
+После запуска приложение будет доступно по адресу:
 
-```sh
+```text id="zv56ty"
+http://localhost:5173/
+```
+
+---
+
+## 3. Production Build
+
+Сборка проекта для продакшена:
+
+```bash id="4lk7l9"
 npm run build
 ```
 
-### Run Unit Tests with [Vitest](https://vitest.dev/)
+---
 
-```sh
-npm run test:unit
-```
+# Структура проекта (`src/`)
+
+## `api/`
+
+### `client.ts`
+
+Настройка Axios-инстанса:
+
+* базовый URL API;
+* Request / Response Interceptors;
+* логика обновления JWT-токенов;
+* очередь повторных запросов.
+
+---
+
+## `stores/`
+
+### `auth.ts`
+
+Управление пользовательской сессией:
+
+* login;
+* logout;
+* хранение токенов;
+* проверка авторизации.
+
+### `tasks.ts`
+
+CRUD-операции для задач:
+
+* получение списка задач;
+* создание;
+* обновление;
+* удаление;
+* реактивное обновление интерфейса через Pinia.
+
+---
+
+## `components/`
+
+Изолированные UI-компоненты:
+
+### `TaskList.vue`
+
+Контейнер списка задач.
+
+### `TaskCard.vue`
+
+Карточка отдельной задачи.
+
+Компоненты взаимодействуют через `props` и `emit` события.
+
+---
+
+## `views/`
+
+Страницы приложения:
+
+* `LoginView.vue`
+* `RegisterView.vue`
+* `TasksView.vue`
+
+Содержат:
+
+* формы;
+* валидацию данных;
+* взаимодействие со store;
+* обработку пользовательских действий.
+
+---
+
+## `types/`
+
+TypeScript-интерфейсы приложения:
+
+### `task.ts`
+
+Типизация задач.
+
+### `auth.ts`
+
+Типизация авторизации и JWT-ответов.
+
+---
+
+# Основные возможности
+
+* JWT-авторизация
+* Автоматический refresh токенов
+* Очередь запросов при обновлении сессии
+* Защищённые маршруты
+* Реактивное состояние через Pinia
+* Полная типизация TypeScript
+* Разделение бизнес-логики и UI
+* SPA-архитектура на Vue 3
