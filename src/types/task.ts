@@ -6,4 +6,4 @@ export interface Task {
   priority: 'low' | 'medium' | 'high' // литерал 
 }
 
-// TODO export interface NewTask extends Task: Omit<id | title>
+//TODO export interface NewTask extends Task: Omit<id | title>

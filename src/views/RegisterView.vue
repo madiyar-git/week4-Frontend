@@ -126,6 +126,7 @@ async function handleSubmit() {
         </form>
     </div>
 </template>
+
 <style scoped>
 .register-container {
   display: flex;

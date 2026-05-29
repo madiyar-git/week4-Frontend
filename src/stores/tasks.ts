@@ -28,7 +28,7 @@ export const useTaskStore = defineStore('tasks', () => {
   async function createTask(payload: Omit<Task, 'id' | 'owner' | 'created_at'>): Promise<void> {
     try {
       const { data } = await api.post<Task>('/tasks/', payload)
-      tasks.value = [...tasks.value, data]
+      tasks.value = [data, ...tasks.value]
     } catch (err) {
       const systemError = err as Error
       throw new Error(systemError.message || 'Failed to create task.')

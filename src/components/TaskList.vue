@@ -10,7 +10,6 @@ defineEmits<{
   'delete': [TaskId: number]
   'update': [taskId: number, fields: Partial<Task>]
   'bulk-action': [action: 'toggle_all' | 'clear_completed' | 'clear_all']
-  'create-task': []
 }>()
 
 const completedCount = computed(() =>{
@@ -40,11 +39,6 @@ const completedCount = computed(() =>{
                 </button>
             </div>
         </div>
-
-        <button @click="$emit('create-task')" class="create-task-btn">
-            <span class="plus-icon">+</span> Добавить задачу
-        </button>
-
         <div v-if="tasks.length > 0" class="task-list">
             <TaskCard v-for="(task,index) in tasks" :key="task.id" v-model="tasks[index]!" @delete="$emit('delete', $event)" @update="(id, fields) => $emit('update',id, fields)"/>
         </div>
