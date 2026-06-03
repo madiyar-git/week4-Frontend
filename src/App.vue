@@ -30,7 +30,7 @@ function handleLogout(): void {
         <RouterLink v-if="!isAuthenticated" to="/register" class="nav-link">Registration</RouterLink>
         
         <div v-if="isAuthenticated" class="user-menu">
-          <span class="username-display">Привет, {{ username }}</span>
+          <span class="username-display">Hi, {{ username }}</span>
           <button @click="handleLogout" class="logout-btn">
             Log out
           </button>
@@ -42,7 +42,7 @@ function handleLogout(): void {
   </main> 
 </template>
 
-<style>
+<style >
 body {
   margin: 0;
   background-color: #121212;

@@ -12,9 +12,10 @@
   padding: 60px 20px;
 }
 h1 {
-  color: #ff4d4f;
+  color: #f83538;
   font-size: 2rem;
   margin-bottom: 16px;
+  background-color: #121212 ;
 }
 p {
   color: #b3b3b3;

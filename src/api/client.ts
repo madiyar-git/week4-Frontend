@@ -1,12 +1,10 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios'
 
 export const api = axios.create({
-    
     baseURL: 'http://127.0.0.1:8000/api',
     timeout: 5000,
 },)
-
-
+// Перехватывает запрос и устанавливает access токен, чтобы сервер понимал от кого прилетел запрос 
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('access_token')
     if (token && config.headers) {
@@ -21,74 +19,77 @@ interface QueueItem {
 }
 
 let isRefreshing = false
-let queue: QueueItem[] = []
+let queue: QueueItem[] = [] // Массив для застрявших запросов 
 
 const processQueue = (error: unknown | null = null): void => {
     queue.forEach((item) => {
         if (error) {
-        item.reject(error)
+            item.reject(error)
         } else {
-        item.resolve()
+            item.resolve()
         }
     })
     queue = []
 }
 
-// (window as unknown as { api: typeof api }).api = api
-
+// Перехватчик ответов из сервера 
 api.interceptors.response.use(
     (response) => response,
     async (error: AxiosError) => {
         const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
+        const isLoginRequest = originalRequest?.url?.includes('/token/') && !originalRequest.url.includes('/refresh/') // Игнор авторизации 
 
-        if (error.response?.status !== 401 || !originalRequest || originalRequest._retry) {
-        return Promise.reject(error)
+        if (error.response?.status !== 401 || !originalRequest || originalRequest._retry || isLoginRequest) {
+            return Promise.reject(error)
         }
 
         originalRequest._retry = true
 
         if (isRefreshing) {
-        try {
-            await new Promise<void>((resolve, reject) => {
-            queue.push({ resolve, reject })
-            })
-            return api(originalRequest)
-        } catch (err) {
-            return Promise.reject(err)
-        }
+            try {
+                await new Promise<void>((resolve, reject) => {
+                queue.push({ resolve, reject })
+                })
+                const token = localStorage.getItem('access_token')
+                if (token && originalRequest.headers) {
+                    originalRequest.headers.Authorization = `Bearer ${token}`
+                }
+                return api(originalRequest)
+            } catch (err) {
+                return Promise.reject(err)
+            }
         }
 
         isRefreshing = true
 
         try {
-        const refresh = localStorage.getItem('refresh_token')
-        
-        if (!refresh) {
-            throw new Error('No refresh token available.')
-        }
+            const refresh = localStorage.getItem('refresh_token')
+            if (!refresh) {
+                throw new Error('No refresh token available.')
+            }
+            interface RefreshResponse {
+                access: string;
+            }
+            const { data } = await axios.post<RefreshResponse>(
+                'http://127.0.0.1:8000/api/token/refresh/',
+                { refresh }
+            )
+            localStorage.setItem('access_token', data.access)
+            // Берется новый access токен и вмонтируется в заголовок  
+            if (originalRequest.headers) {
+                originalRequest.headers.Authorization = `Bearer ${data.access}`
+            }
 
-        interface RefreshResponse {
-            access: string;
-        }
-        
-        const { data } = await axios.post<RefreshResponse>(
-            'http://127.0.0.1:8000/api/token/refresh/',
-            { refresh }
-        )
-
-        localStorage.setItem('access_token', data.access)
-
-        processQueue()
-
+            processQueue()
         return api(originalRequest)
 
         } catch (refreshError) {
-        processQueue(refreshError)
-        localStorage.clear()
-        window.location.href = '/login'
-        return Promise.reject(refreshError)
+            processQueue(refreshError)
+            localStorage.clear()
+            window.location.href = '/login'
+            return Promise.reject(refreshError)
         } finally {
-        isRefreshing = false
+            isRefreshing = false    
         }
     }
 )

@@ -17,7 +17,7 @@ const emit = defineEmits<{
 <template>
   <div class="task-card" :class="{ 'is-completed': task.completed }">
     <div class="task-header">
-      <h3 v-if="!isEditing" @dblclick="isEditing = true" class="title">{{ task.title && task.title.trim() !== '' ? task.title : 'Без названия...' }}</h3>
+      <h3 v-if="!isEditing" @dblclick="isEditing = true" class="title">{{ task.title && task.title.trim() !== '' ? task.title : 'No name...' }}</h3>
       <input v-else v-model="task.title" @blur="isEditing = false; $emit('update', task.id, { title: task.title })" @keyup.enter="isEditing = false; $emit('update', task.id, { title: task.title })" class="title-input">
       
       <div class="buttons">

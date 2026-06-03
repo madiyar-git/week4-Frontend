@@ -115,32 +115,6 @@ const completedCount = computed(() =>{
   transform: scale(0.95);
 }
 
-.create-task-btn {
-  width: 100%;
-  background-color: #1db954;
-  color: #000000;
-  border: none;
-  padding: 14px;
-  border-radius: 25px; 
-  font-size: 1rem;
-  font-weight: bold;
-  cursor: pointer;
-  margin-bottom: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: transform 0.2s ease, background-color 0.2s ease;
-}
-
-.create-task-btn:hover {
-  background-color: #1ed760; 
-  transform: scale(1.02); 
-}
-
-.create-task-btn:active {
-  transform: scale(0.98);
-}
 
 .plus-icon {
   font-size: 1.4rem;

@@ -33,13 +33,18 @@ async function handleSubmit() {
   
   try {
     await auth.login(username.value, password.value)
-    
     const redirectPath = route.query.redirect as string || '/tasks'
     
     router.push(redirectPath)
   } catch(err: unknown) {
-    const axiosError = err as AxiosError<DjangoErrorData>
-    error.value = axiosError.response?.data?.detail || 'Login error'
+      const axiosError = err as AxiosError<DjangoErrorData>
+      // error.value = axiosError.response?.data?.detail || 'Login error'
+      if (axiosError.response?.data?.detail){
+        error.value = 'Wrong username or password. Try Again.'
+      } else {
+        error.value = 'Something wrong...'
+      }
+
   } finally {
     isLoading.value = false
   }
