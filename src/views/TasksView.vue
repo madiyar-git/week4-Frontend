@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from "vue"
+import { onMounted, ref, computed } from 'vue'
 import { useTaskStore } from '@/stores/tasks'
 import { storeToRefs } from 'pinia'
 import type { Task } from '../types/task'
@@ -29,26 +29,25 @@ async function handleCreateTask(): Promise<void> {
       title: newTitle.value.trim(),
       description: newDescription.value.trim(),
       priority: newPriority.value,
-      completed: false
+      completed: false,
     })
 
     newTitle.value = ''
     newDescription.value = ''
     newPriority.value = 'medium'
   } catch (err: unknown) {
-    console.error(err) 
+    console.error(err)
     const errorObject = err as Error
     formError.value = errorObject.message || 'Failed to create task.'
   } finally {
     isSubmitting.value = false
   }
 }
-
 async function handleToggleCompleted(id: number, fields: Partial<Task>): Promise<void> {
   try {
     await tasksStore.updateTask(id, fields)
   } catch (err: unknown) {
-    console.error(err) 
+    console.error(err)
     alert('Failed to update task status.')
   }
 }
@@ -57,42 +56,40 @@ async function handleDeleteTask(id: number): Promise<void> {
   try {
     await tasksStore.deleteTask(id)
   } catch (err: unknown) {
-    console.error(err) 
+    console.error(err)
     alert('Failed to delete task.')
   }
 }
 
-async function bulkAction(actionName: 'toggle_all' | 'clear_completed' | 'clear_all'): Promise<void> {
+async function bulkAction(
+  actionName: 'toggle_all' | 'clear_completed' | 'clear_all',
+): Promise<void> {
   if (actionName === 'toggle_all') {
-    const areAllCompleted = tasks.value.every(t => t.completed)
+    const areAllCompleted = tasks.value.every((t) => t.completed)
     const newStatus = !areAllCompleted
-    const promises = tasks.value.map(t => tasksStore.updateTask(t.id, { completed: newStatus }))
+    const promises = tasks.value.map((t) => tasksStore.updateTask(t.id, { completed: newStatus }))
 
     try {
       await Promise.all(promises)
     } catch (err: unknown) {
-      console.error(err) 
+      console.error(err)
       alert('Failed to update all tasks.')
     }
-  } 
-  
-  else if (actionName === 'clear_completed') {
-    const completedTasks = tasks.value.filter(t => t.completed)
+  } else if (actionName === 'clear_completed') {
+    const completedTasks = tasks.value.filter((t) => t.completed)
     try {
-      const promises = completedTasks.map(t => tasksStore.deleteTask(t.id))
+      const promises = completedTasks.map((t) => tasksStore.deleteTask(t.id))
       await Promise.all(promises)
     } catch (err: unknown) {
-      console.error(err) 
+      console.error(err)
       alert('Failed to clear completed tasks.')
     }
-  } 
-  
-  else if (actionName === 'clear_all') {
+  } else if (actionName === 'clear_all') {
     try {
-      const promises = tasks.value.map(t => tasksStore.deleteTask(t.id))
+      const promises = tasks.value.map((t) => tasksStore.deleteTask(t.id))
       await Promise.all(promises)
     } catch (err: unknown) {
-      console.error(err) 
+      console.error(err)
       alert('Failed to clear all tasks.')
     }
   }
@@ -110,20 +107,20 @@ onMounted(() => {
 
       <form @submit.prevent="handleCreateTask" class="create-task-form">
         <h3>New Task</h3>
-        
+
         <div class="form-group">
-          <input 
-            v-model="newTitle" 
-            type="text" 
-            placeholder="Task title (min 3 symbols)..." 
-            required 
+          <input
+            v-model="newTitle"
+            type="text"
+            placeholder="Task title (min 3 symbols)..."
+            required
             :disabled="isSubmitting"
           />
         </div>
 
         <div class="form-group">
-          <textarea 
-            v-model="newDescription" 
+          <textarea
+            v-model="newDescription"
             placeholder="Description (optional)..."
             :disabled="isSubmitting"
           ></textarea>
@@ -139,7 +136,7 @@ onMounted(() => {
         </div>
 
         <p v-if="formError" class="error-text">{{ formError }}</p>
-        
+
         <button type="submit" :disabled="!isFormValid || isSubmitting">
           {{ isSubmitting ? 'Creating...' : 'Add Task' }}
         </button>
@@ -151,23 +148,25 @@ onMounted(() => {
         <div class="spinner"></div>
         <p>Loading tasks from server...</p>
       </div>
-      
+
       <div v-else-if="error" class="error-banner">
         <p>Error: {{ error }}</p>
         <button @click="tasksStore.fetchTasks()" class="retry-btn">Retry</button>
       </div>
-      
-      <p v-else-if="tasks.length === 0" class="empty-text">No tasks found. Create your first task!</p>
-      
-      <TaskList 
-        v-else 
-        v-model="tasks" 
-        @delete="handleDeleteTask" 
-        @update="handleToggleCompleted" 
-        @bulk-action="bulkAction" 
+
+      <p v-else-if="tasks.length === 0" class="empty-text">
+        No tasks found. Create your first task!
+      </p>
+
+      <TaskList
+        v-else
+        v-model="tasks"
+        @delete="handleDeleteTask"
+        @update="handleToggleCompleted"
+        @bulk-action="bulkAction"
       />
     </div>
-  </main> 
+  </main>
 </template>
 
 <style scoped>
@@ -183,7 +182,7 @@ onMounted(() => {
 
 .tasks-container {
   width: 100%;
-  max-width: 400px; 
+  max-width: 400px;
   box-sizing: border-box;
 }
 
@@ -225,7 +224,9 @@ label {
   color: #ffffff;
 }
 
-input, textarea, select {
+input,
+textarea,
+select {
   background-color: #3e3e3e;
   border: 1px solid #535353;
   color: #ffffff;
@@ -233,17 +234,23 @@ input, textarea, select {
   border-radius: 4px;
   font-size: 0.95rem;
   box-sizing: border-box;
-  transition: border-color 0.2s ease, background-color 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
   font-family: sans-serif;
 }
 
-input:focus, textarea:focus, select:focus {
+input:focus,
+textarea:focus,
+select:focus {
   outline: none;
   border-color: #1db954;
   background-color: #4a4a4a;
 }
 
-input:disabled, textarea:disabled, select:disabled {
+input:disabled,
+textarea:disabled,
+select:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -257,7 +264,7 @@ select {
   cursor: pointer;
 }
 
-.create-task-form button[type="submit"] {
+.create-task-form button[type='submit'] {
   width: 100%;
   background-color: #1db954;
   color: #000000;
@@ -271,19 +278,22 @@ select {
   align-items: center;
   justify-content: center;
   margin-top: 10px;
-  transition: transform 0.2s ease, background-color 0.2s ease, opacity 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease,
+    opacity 0.2s ease;
 }
 
-.create-task-form button[type="submit"]:hover:not(:disabled) {
+.create-task-form button[type='submit']:hover:not(:disabled) {
   background-color: #1ed760;
   transform: scale(1.02);
 }
 
-.create-task-form button[type="submit"]:active:not(:disabled) {
+.create-task-form button[type='submit']:active:not(:disabled) {
   transform: scale(0.98);
 }
 
-.create-task-form button[type="submit"]:disabled {
+.create-task-form button[type='submit']:disabled {
   background-color: #535353;
   color: #b3b3b3;
   opacity: 0.6;
@@ -316,14 +326,14 @@ select {
   padding: 20px 0;
 }
 
-.spinner-container { 
+.spinner-container {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   gap: 12px;
-  padding: 40px; 
-  color: #1db954; 
+  padding: 40px;
+  color: #1db954;
   font-size: 0.95rem;
 }
 
@@ -337,8 +347,12 @@ select {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .error-banner {
@@ -365,7 +379,9 @@ select {
   font-size: 0.9rem;
   font-weight: bold;
   cursor: pointer;
-  transition: transform 0.2s ease, background-color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease;
 }
 
 .retry-btn:hover {
