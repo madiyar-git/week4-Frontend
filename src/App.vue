@@ -14,7 +14,7 @@ const { logout } = authStore
 function handleLogout(): void {
   logout()
   tasksStore.reset()
-  router.push('/login') 
+  router.push('/login')
 }
 </script>
 
@@ -22,27 +22,37 @@ function handleLogout(): void {
   <main class="app-main">
     <header class="app-header">
       <h1>Task Manager</h1>
-      
+
       <nav class="nav-bar">
         <RouterLink v-if="isAuthenticated" to="/tasks" class="nav-link">Tasks</RouterLink>
-        
+
         <RouterLink v-if="!isAuthenticated" to="/login" class="nav-link">Login</RouterLink>
-        <RouterLink v-if="!isAuthenticated" to="/register" class="nav-link">Registration</RouterLink>
-        
+        <RouterLink v-if="!isAuthenticated" to="/register" class="nav-link"
+          >Registration</RouterLink
+        >
+
         <div v-if="isAuthenticated" class="user-menu">
           <span class="username-display">Hi, {{ username }}</span>
-          <button @click="handleLogout" class="logout-btn">
+        <!-- [x] Кнопка -->
+          <BaseButton
+            type="submit"
+            variant="danger"
+            size="sm"
+            :disabled="false"
+            @click="handleLogout"
+            class="logout-btn"
+          >
             Log out
-          </button>
+          </BaseButton>
         </div>
       </nav>
     </header>
 
     <RouterView />
-  </main> 
+  </main>
 </template>
 
-<style >
+<style>
 body {
   margin: 0;
   background-color: #121212;
@@ -95,15 +105,19 @@ h1 {
 }
 
 .logout-btn {
+  display: flex;
+
   background: none;
   border: none;
-  color: #ff4d4f; 
+  color: #ff4d4f;
   font-size: 0.9rem;
   font-weight: 600;
   padding: 6px 12px;
   cursor: pointer;
   border-radius: 14px;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 
 .logout-btn:hover {
@@ -122,22 +136,24 @@ h1 {
 }
 
 .nav-link {
-  color: #b3b3b3; 
+  color: #b3b3b3;
   text-decoration: none;
   font-size: 0.9rem;
   font-weight: 600;
   padding: 6px 12px;
   border-radius: 14px;
-  transition: color 0.2s ease, background-color 0.2s ease;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
 }
 
 .nav-link:hover {
-  color: #ffffff; 
+  color: #ffffff;
 }
 
 .nav-link.router-link-active {
   color: #1db954;
-  background-color: #282828; 
+  background-color: #282828;
   font-weight: 700;
 }
 </style>
