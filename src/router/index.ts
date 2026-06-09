@@ -31,14 +31,15 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to) => {
   const auth = useAuthStore()
+
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
-    next('/login')
-  } else if ((to.path === '/login' || to.path === '/register') && auth.isAuthenticated) {
-    next('/tasks')
-  } else {
-    next()
+    return '/login'
+  }
+
+  if ((to.path === '/login' || to.path === '/register') && auth.isAuthenticated) {
+    return '/tasks'
   }
 })
 

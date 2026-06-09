@@ -5,6 +5,7 @@ import { storeToRefs } from 'pinia'
 import type { Task } from '../types/task'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseInput from '@/components/base/BaseInput.vue'
+import BaseCard from '@/components/base/BaseCard.vue'
 import TaskList from '../components/TaskList.vue'
 
 const tasksStore = useTaskStore()
@@ -45,6 +46,7 @@ async function handleCreateTask(): Promise<void> {
     isSubmitting.value = false
   }
 }
+
 async function handleToggleCompleted(id: number, fields: Partial<Task>): Promise<void> {
   try {
     await tasksStore.updateTask(id, fields)
@@ -107,48 +109,59 @@ onMounted(() => {
     <div class="tasks-container">
       <h2>My Tasks</h2>
 
-      <form @submit.prevent="handleCreateTask" class="create-task-form">
-        <h3>New Task</h3>
+      <BaseCard class="task-form-card">
+        <template #header>
+          <h3>New Task</h3>
+        </template>
 
-        <div class="form-group">
-          <BaseInput
-            v-model="newTitle"
-            type="text"
-            placeholder="Task title (min 3 symbols)..."
-            :disabled="isSubmitting"
-          />
-        </div>
+        <form @submit.prevent="handleCreateTask" class="create-task-form">
+          <div class="form-group">
+            <BaseInput
+              v-model="newTitle"
+              type="text"
+              label="Title"
+              placeholder="Task title (min 3 symbols)..."
+              :disabled="isSubmitting"
+              :error="formError || undefined"
+              required
+            />
+          </div>
 
-        <div class="form-group">
-          <BaseInput
-            v-model="newDescription"
-            placeholder="Description (optional)..."
-            :disabled="isSubmitting"
-          />
-        </div>
+          <div class="form-group">
+            <BaseInput
+              v-model="newDescription"
+              label="Description"
+              placeholder="Description (optional)..."
+              :disabled="isSubmitting"
+            />
+          </div>
 
-        <div class="form-group">
-          <label for="priority">Priority: </label>
-          <select id="priority" v-model="newPriority" :class="newPriority" :disabled="isSubmitting">
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-          </select>
-        </div>
+          <div class="form-group">
+            <label for="priority">Priority</label>
+            <select
+              id="priority"
+              v-model="newPriority"
+              :class="newPriority"
+              :disabled="isSubmitting"
+            >
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
 
-        <p v-if="formError" class="error-text">{{ formError }}</p>
-
-        <BaseButton
-          type="submit"
-          variant="primary"
-          size="lg"
-          :disabled="!isFormValid || isLoading"
-          :loading="isLoading"
-          style="width: 100%"
-        >
-          Create New Task
-        </BaseButton>
-      </form>
+          <BaseButton
+            type="submit"
+            variant="primary"
+            size="lg"
+            :disabled="!isFormValid || isLoading"
+            :loading="isLoading"
+            style="width: 100%; margin-top: 12px"
+          >
+            Create New Task
+          </BaseButton>
+        </form>
+      </BaseCard>
 
       <hr class="divider" />
 
@@ -170,12 +183,12 @@ onMounted(() => {
         </BaseButton>
       </div>
 
-      <p v-else-if="tasks.length === 0" class="empty-text">
+      <p v-if="!isLoading && tasks.length === 0" class="empty-text">
         No tasks found. Create your first task!
       </p>
 
       <TaskList
-        v-else
+        v-else-if="tasks.length > 0"
         v-model="tasks"
         @delete="handleDeleteTask"
         @update="handleToggleCompleted"
@@ -210,34 +223,38 @@ h2 {
   color: #ffffff;
 }
 
-.create-task-form {
-  background-color: #181818;
-  border: 1px solid #282828;
-  padding: 40px;
-  border-radius: 8px;
-  width: 100%;
-  box-sizing: border-box;
+.task-form-card {
   margin-bottom: 25px;
 }
 
-.create-task-form h3 {
-  margin: 0 0 20px 0;
+h3 {
+  margin: 0;
   font-size: 1.3rem;
   font-weight: 700;
   color: #1db954;
 }
 
+.create-task-form {
+  display: flex;
+  flex-direction: column;
+}
+
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
+.form-group:last-of-type {
+  margin-bottom: 20px;
+}
+
 label {
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 700;
   color: #ffffff;
+  text-align: left;
 }
 
 select {
@@ -294,18 +311,6 @@ select option {
   border: 0;
   border-top: 1px solid #282828;
   margin: 25px 0;
-}
-
-.error-text {
-  background-color: #4a1d24;
-  color: #feb2b2;
-  padding: 10px;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  margin-bottom: 20px;
-  text-align: center;
-  border: 1px solid #ff4d4f;
-  box-sizing: border-box;
 }
 
 .empty-text {

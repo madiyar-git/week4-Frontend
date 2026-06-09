@@ -201,6 +201,7 @@ const emit = defineEmits<{
 }
 .delete-btn:hover {
   color: #ff4d4f;
+  color: #141414;
   transform: scale(1.1);
 }
 

@@ -5,6 +5,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseInput from '@/components/base/BaseInput.vue'
+import BaseCard from '@/components/base/BaseCard.vue'
 
 interface DjangoErrorData {
   detail?: string
@@ -66,11 +67,12 @@ onMounted(() => {
       {{ successMessage }}
     </div>
 
-    <form @submit.prevent="handleSubmit" class="login-form">
-      <h2>Sign in</h2>
+    <BaseCard class="login-card">
+      <template #header>
+        <h2>Sign in</h2>
+      </template>
 
-      <div class="form-group">
-        <!-- [x]инпут -->
+      <form @submit.prevent="handleSubmit" class="login-form">
         <BaseInput
           v-model="username"
           label="Username"
@@ -79,10 +81,7 @@ onMounted(() => {
           autocomplete="username"
           :error="error"
         />
-      </div>
 
-      <div class="form-group">
-        <!-- [x] инпут -->
         <BaseInput
           v-model="password"
           label="Password"
@@ -90,24 +89,25 @@ onMounted(() => {
           placeholder="Enter your password"
           :disabled="isLoading"
           :error="error"
+          autocomplete="current-password"
         />
-      </div>
 
-      <div v-if="error" class="error-message">
-        {{ error }}
-      </div>
-      <!-- [x] Кнопка -->
-      <BaseButton
-        type="submit"
-        variant="primary"
-        size="lg"
-        :disabled="!isFormValid || isLoading"
-        :loading="isLoading"
-        style="width: 100%"
-      >
-        Sign In
-      </BaseButton>
-    </form>
+        <div v-if="error" class="error-message">
+          {{ error }}
+        </div>
+
+        <BaseButton
+          type="submit"
+          variant="primary"
+          size="lg"
+          :disabled="!isFormValid || isLoading"
+          :loading="isLoading"
+          style="width: 100%; margin-top: 12px;"
+        >
+          Sign In
+        </BaseButton>
+      </form>
+    </BaseCard>
   </div>
 </template>
 
@@ -115,142 +115,45 @@ onMounted(() => {
 .login-container {
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  min-height: 60vh;
-  width: 100%;
-}
-.success-banner {
-  background-color: #14321a;
-  border: 1px solid #1db954;
-  color: #1db954;
-  padding: 12px 24px;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  font-weight: bold;
-  margin-bottom: 20px;
-  max-width: 400px;
-  text-align: center;
+  justify-content: center;
+  padding: 40px 20px;
+  min-height: 70vh;
 }
 
-.login-form {
-  background-color: #181818;
-  border: 1px solid #282828;
-  padding: 40px;
-  border-radius: 8px;
-  width: 100%;
+.login-card {
   max-width: 400px;
-  box-sizing: border-box;
 }
 
 h2 {
-  margin: 0 0 24px 0;
+  margin: 0;
   font-size: 1.75rem;
   font-weight: 700;
-  text-align: center;
   color: #ffffff;
 }
 
-.form-group {
-  margin-bottom: 20px;
+.login-form {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-}
-
-label {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #ffffff;
-}
-
-input {
-  background-color: #3e3e3e;
-  border: 1px solid #535353;
-  color: #ffffff;
-  padding: 12px;
-  border-radius: 4px;
-  font-size: 0.95rem;
-  box-sizing: border-box;
-  transition:
-    border-color 0.2s ease,
-    background-color 0.2s ease;
-}
-
-input:focus {
-  outline: none;
-  border-color: #1db954;
-  background-color: #4a4a4a;
-}
-
-input:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .error-message {
-  background-color: #4a1d24;
-  color: #feb2b2;
-  padding: 10px;
-  border-radius: 4px;
+  color: #e91429;
   font-size: 0.85rem;
-  margin-bottom: 20px;
-  text-align: center;
-  border: 1px solid #ff4d4f;
+  margin-bottom: 16px;
+  text-align: left;
 }
 
-.submit-btn {
-  width: 100%;
+.success-banner {
   background-color: #1db954;
   color: #000000;
-  border: none;
-  padding: 14px;
-  border-radius: 25px;
-  font-size: 1rem;
+  padding: 12px;
+  border-radius: 4px;
   font-weight: bold;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 10px;
-  transition:
-    transform 0.2s ease,
-    background-color 0.2s ease,
-    opacity 0.2s ease;
-}
-
-.submit-btn:hover:not(:disabled) {
-  background-color: #1ed760;
-  transform: scale(1.02);
-}
-
-.submit-btn:active:not(:disabled) {
-  transform: scale(0.98);
-}
-
-.submit-btn:disabled {
-  background-color: #535353;
-  color: #b3b3b3;
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.btn-spinner {
-  width: 18px;
-  height: 18px;
-  border: 2px solid #000000;
-  border-top: 2px solid transparent;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  box-sizing: border-box;
 }
 </style>

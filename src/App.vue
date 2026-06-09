@@ -3,6 +3,7 @@ import { RouterLink, RouterView, useRouter } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import { storeToRefs } from 'pinia'
 import { useTaskStore } from './stores/tasks'
+import BaseButton from '@/components/base/BaseButton.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()

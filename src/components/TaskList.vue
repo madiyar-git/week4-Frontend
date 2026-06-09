@@ -23,45 +23,35 @@ const completedCount = computed(() => {
       <div class="stats-text">Tasks: {{ tasks.length }} (completed: {{ completedCount }})</div>
 
       <div class="bulk-actions" v-if="tasks.length > 0">
-        <!-- [x] Кнопка -->
         <BaseButton
-          type="submit"
+          type="button"
           variant="primary"
           size="sm"
-          :disabled="false"
-          :loading="false"
           @click="$emit('bulk-action', 'toggle_all')"
-          class="bulk-btn success"
         >
           Mark all
         </BaseButton>
-        <!-- [x] Кнопка -->
+
         <BaseButton
-          type="submit"
+          type="button"
           variant="secondary"
           size="sm"
-          :disabled="false"
-          :loading="false"
           @click="$emit('bulk-action', 'clear_completed')"
-          class="bulk-btn warning"
         >
           Delete done tasks
         </BaseButton>
-        <!-- [x] Кнопка -->
+
         <BaseButton
-          type="submit"
-          variant="secondary"
+          type="button"
+          variant="danger"
           size="sm"
-          :disabled="false"
-          :loading="false"
           @click="$emit('bulk-action', 'clear_all')"
-          class="bulk-btn danger"
         >
           Delete all
         </BaseButton>
-        
       </div>
     </div>
+
     <div v-if="tasks.length > 0" class="task-list">
       <TaskCard
         v-for="(task, index) in tasks"
@@ -106,47 +96,8 @@ const completedCount = computed(() => {
 .bulk-actions {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
+  justify-content: center;
   gap: 8px;
-}
-
-.bulk-btn {
-  background-color: #282828;
-  color: #ffffff;
-  border: 1px solid #3e3e3e;
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.bulk-btn.success:hover {
-  background-color: #1db954;
-  border-color: #1db954;
-  color: #000000;
-}
-
-.bulk-btn.warning:hover {
-  background-color: #fbd38d;
-  border-color: #fbd38d;
-  color: #000000;
-}
-
-.bulk-btn.danger:hover {
-  background-color: #ff4d4f;
-  border-color: #ff4d4f;
-  color: #ffffff;
-}
-
-.bulk-btn:active {
-  transform: scale(0.95);
-}
-
-.plus-icon {
-  font-size: 1.4rem;
-  line-height: 1;
 }
 
 .task-list {
