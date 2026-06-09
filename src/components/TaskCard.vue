@@ -1,30 +1,56 @@
 <script setup lang="ts">
 import type { Task } from '../types/task'
-import { ref } from 'vue';
+import BaseButton from '@/components/base/BaseButton.vue'
+import BaseInput from '@/components/base/BaseInput.vue'
+import { ref } from 'vue'
 
 const isEditing = ref(false)
 const isEditingDesc = ref(false)
 const task = defineModel<Task>({ required: true })
 
 const emit = defineEmits<{
-  'delete': [taskId: number]
-  'update': [taskId: number, fields: Partial<Task>]
+  delete: [taskId: number]
+  update: [taskId: number, fields: Partial<Task>]
 }>()
-
-
 </script>
 
 <template>
   <div class="task-card" :class="{ 'is-completed': task.completed }">
     <div class="task-header">
-      <h3 v-if="!isEditing" @dblclick="isEditing = true" class="title">{{ task.title && task.title.trim() !== '' ? task.title : 'No name...' }}</h3>
-      <input v-else v-model="task.title" @blur="isEditing = false; $emit('update', task.id, { title: task.title })" @keyup.enter="isEditing = false; $emit('update', task.id, { title: task.title })" class="title-input">
-      
+      <h3 v-if="!isEditing" @dblclick="isEditing = true" class="title">
+        {{ task.title && task.title.trim() !== '' ? task.title : 'No name...' }}
+      </h3>
+
+      <!-- [x] инпут -->
+      <BaseInput
+        v-else
+        v-model="task.title"
+        placeholder="Enter your username"
+        @blur="((isEditing = false), $emit('update', task.id, { title: task.title }))"
+        @keyup.enter="((isEditing = false), $emit('update', task.id, { title: task.title }))"
+      />
+
       <div class="buttons">
-        <input type="checkbox" v-model="task.completed" class="checkbox" @change="$emit('update', task.id, {completed : task.completed})"/>
-        <button @click="emit('delete', task.id)" class="delete-btn"> &times; </button>
+        <!-- [x]инпут -->
+        <BaseInput
+          type="checkbox"
+          v-model="task.completed"
+          class="checkbox"
+          @change="$emit('update', task.id, { completed: task.completed })"
+        />
+        <!-- [x]кнопка -->
+        <BaseButton
+          type="submit"
+          variant="danger"
+          size="sm"
+          :disabled="false"
+          :loading="false"
+          @click="emit('delete', task.id)"
+          class="delete-btn"
+        >
+          &times;
+        </BaseButton>
       </div>
-      
     </div>
 
     <div v-if="!isEditingDesc" class="description-block">
@@ -36,10 +62,22 @@ const emit = defineEmits<{
       </p>
     </div>
 
-    <textarea v-else v-model="task.description" @blur="isEditingDesc = false; $emit('update', task.id, { description: task.description })" @keyup.enter="isEditingDesc = false; $emit('update', task.id, { description: task.description })" class="description-input">
-    </textarea>
-    
-    <select class="priority-badge" :class="task.priority" v-model="task.priority" @change="$emit('update', task.id, {priority: task.priority})">
+    <!-- [x] инпут -->
+    <BaseInput
+      v-else
+      v-model="task.description"
+      @blur="((isEditingDesc = false), $emit('update', task.id, { description: task.description }))"
+      @keyup.enter="
+        ((isEditingDesc = false), $emit('update', task.id, { description: task.description }))
+      "
+    />
+
+    <select
+      class="priority-badge"
+      :class="task.priority"
+      v-model="task.priority"
+      @change="$emit('update', task.id, { priority: task.priority })"
+    >
       <option value="low">Low</option>
       <option value="medium">Medium</option>
       <option value="high">High</option>
@@ -51,13 +89,16 @@ const emit = defineEmits<{
 .task-card {
   background-color: #181818;
   border: 1px solid #282828;
-  padding: 20px; 
+  padding: 20px;
   border-radius: 8px;
-  transition: background-color 0.3s ease, border-color 0.3s ease, opacity 0.4s ease;
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    opacity 0.4s ease;
 }
 
 .task-card:hover {
-  background-color: #282828; 
+  background-color: #282828;
   border-color: #3e3e3e;
   box-shadow: 0 2px 8px rgb(88, 107, 77);
 }
@@ -87,9 +128,10 @@ const emit = defineEmits<{
   width: 75%;
   box-sizing: border-box;
 }
-.title-input:focus, .description-input:focus {
+.title-input:focus,
+.description-input:focus {
   outline: none;
-  border-color: #1db954; 
+  border-color: #1db954;
 }
 
 .description {
@@ -98,12 +140,19 @@ const emit = defineEmits<{
   color: #b3b3b3;
   line-height: 1.4;
   cursor: pointer;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .description-placeholder {
   margin: 12px 0 0 0;
   font-size: 0.9rem;
-  color: #535353; 
+  color: #535353;
   font-style: italic;
   cursor: pointer;
 }
@@ -146,10 +195,12 @@ const emit = defineEmits<{
   font-size: 1.4rem;
   cursor: pointer;
   padding: 0;
-  transition: color 0.2s, transform 0.2s;
+  transition:
+    color 0.2s,
+    transform 0.2s;
 }
 .delete-btn:hover {
-  color: #ff4d4f; 
+  color: #ff4d4f;
   transform: scale(1.1);
 }
 
@@ -158,10 +209,9 @@ const emit = defineEmits<{
 }
 .is-completed .title,
 .is-completed .description {
-  text-decoration: line-through; 
+  text-decoration: line-through;
   color: #6fce66;
 }
-
 
 .priority-badge {
   display: inline-block;
@@ -177,7 +227,16 @@ const emit = defineEmits<{
   outline: none;
 }
 
-.low { background-color: #2d3748; color: #90cdf4; }
-.medium { background-color: #4a371c; color: #fbd38d; }
-.high { background-color: #4a1d24; color: #feb2b2; }
+.low {
+  background-color: #2d3748;
+  color: #90cdf4;
+}
+.medium {
+  background-color: #4a371c;
+  color: #fbd38d;
+}
+.high {
+  background-color: #4a1d24;
+  color: #feb2b2;
+}
 </style>

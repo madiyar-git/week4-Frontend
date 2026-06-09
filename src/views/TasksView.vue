@@ -3,6 +3,8 @@ import { onMounted, ref, computed } from 'vue'
 import { useTaskStore } from '@/stores/tasks'
 import { storeToRefs } from 'pinia'
 import type { Task } from '../types/task'
+import BaseButton from '@/components/base/BaseButton.vue'
+import BaseInput from '@/components/base/BaseInput.vue'
 import TaskList from '../components/TaskList.vue'
 
 const tasksStore = useTaskStore()
@@ -109,26 +111,25 @@ onMounted(() => {
         <h3>New Task</h3>
 
         <div class="form-group">
-          <input
+          <BaseInput
             v-model="newTitle"
             type="text"
             placeholder="Task title (min 3 symbols)..."
-            required
             :disabled="isSubmitting"
           />
         </div>
 
         <div class="form-group">
-          <textarea
+          <BaseInput
             v-model="newDescription"
             placeholder="Description (optional)..."
             :disabled="isSubmitting"
-          ></textarea>
+          />
         </div>
 
         <div class="form-group">
           <label for="priority">Priority: </label>
-          <select id="priority" v-model="newPriority" :disabled="isSubmitting">
+          <select id="priority" v-model="newPriority" :class="newPriority" :disabled="isSubmitting">
             <option value="low">Low</option>
             <option value="medium">Medium</option>
             <option value="high">High</option>
@@ -137,9 +138,16 @@ onMounted(() => {
 
         <p v-if="formError" class="error-text">{{ formError }}</p>
 
-        <button type="submit" :disabled="!isFormValid || isSubmitting">
-          {{ isSubmitting ? 'Creating...' : 'Add Task' }}
-        </button>
+        <BaseButton
+          type="submit"
+          variant="primary"
+          size="lg"
+          :disabled="!isFormValid || isLoading"
+          :loading="isLoading"
+          style="width: 100%"
+        >
+          Create New Task
+        </BaseButton>
       </form>
 
       <hr class="divider" />
@@ -151,7 +159,15 @@ onMounted(() => {
 
       <div v-else-if="error" class="error-banner">
         <p>Error: {{ error }}</p>
-        <button @click="tasksStore.fetchTasks()" class="retry-btn">Retry</button>
+        <BaseButton
+          type="button"
+          variant="secondary"
+          size="sm"
+          style="width: 60%"
+          @click="tasksStore.fetchTasks()"
+        >
+          Retry
+        </BaseButton>
       </div>
 
       <p v-else-if="tasks.length === 0" class="empty-text">
@@ -224,81 +240,54 @@ label {
   color: #ffffff;
 }
 
-input,
-textarea,
 select {
-  background-color: #3e3e3e;
-  border: 1px solid #535353;
+  background-color: #242424;
+  border: 1px solid #727272;
   color: #ffffff;
   padding: 12px;
   border-radius: 4px;
   font-size: 0.95rem;
   box-sizing: border-box;
+  cursor: pointer;
+  font-family: sans-serif;
   transition:
     border-color 0.2s ease,
-    background-color 0.2s ease;
-  font-family: sans-serif;
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 
-input:focus,
-textarea:focus,
 select:focus {
+  border-color: #ffffff;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
   outline: none;
-  border-color: #1db954;
-  background-color: #4a4a4a;
 }
 
-input:disabled,
-textarea:disabled,
 select:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-textarea {
-  resize: vertical;
-  height: 90px;
+.low {
+  background-color: #1a2a3a;
+  color: #90cdf4;
+  border-color: #2b6cb0;
 }
 
-select {
-  cursor: pointer;
+.medium {
+  background-color: #3d2a1d;
+  color: #fbd38d;
+  border-color: #dd6b20;
 }
 
-.create-task-form button[type='submit'] {
-  width: 100%;
-  background-color: #1db954;
-  color: #000000;
-  border: none;
-  padding: 14px;
-  border-radius: 25px;
-  font-size: 1rem;
-  font-weight: bold;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 10px;
-  transition:
-    transform 0.2s ease,
-    background-color 0.2s ease,
-    opacity 0.2s ease;
+.high {
+  background-color: #3d1d24;
+  color: #feb2b2;
+  border-color: #e53e3e;
 }
 
-.create-task-form button[type='submit']:hover:not(:disabled) {
-  background-color: #1ed760;
-  transform: scale(1.02);
-}
-
-.create-task-form button[type='submit']:active:not(:disabled) {
-  transform: scale(0.98);
-}
-
-.create-task-form button[type='submit']:disabled {
-  background-color: #535353;
-  color: #b3b3b3;
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
+select option {
+  background-color: #242424;
+  color: #ffffff;
 }
 
 .divider {
@@ -347,10 +336,7 @@ select {
 }
 
 @keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
+  to {
     transform: rotate(360deg);
   }
 }
@@ -363,33 +349,14 @@ select {
   color: #feb2b2;
   text-align: center;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
 }
 
 .error-banner p {
-  margin: 0 0 16px 0;
+  margin: 0;
   font-size: 0.95rem;
-}
-
-.retry-btn {
-  background-color: #1db954;
-  color: #000000;
-  border: none;
-  padding: 10px 24px;
-  border-radius: 25px;
-  font-size: 0.9rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition:
-    transform 0.2s ease,
-    background-color 0.2s ease;
-}
-
-.retry-btn:hover {
-  background-color: #1ed760;
-  transform: scale(1.02);
-}
-
-.retry-btn:active {
-  transform: scale(0.98);
 }
 </style>

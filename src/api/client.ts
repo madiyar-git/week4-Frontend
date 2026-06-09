@@ -4,7 +4,7 @@ export const api = axios.create({
   baseURL: 'http://127.0.0.1:8000/api',
   timeout: 5000,
 })
-// Перехватывает запрос и устанавливает access токен, чтобы сервер понимал от кого прилетел запрос
+//XXX Перехватывает запрос и устанавливает access токен, чтобы сервер понимал от кого прилетел запрос
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('access_token')
   if (token && config.headers) {
@@ -19,7 +19,7 @@ interface QueueItem {
 }
 
 let isRefreshing = false
-let queue: QueueItem[] = [] // Массив для застрявших запросов
+let queue: QueueItem[] = [] //XXX Массив для застрявших запросов
 
 const processQueue = (error: unknown | null = null): void => {
   queue.forEach((item) => {
@@ -32,13 +32,13 @@ const processQueue = (error: unknown | null = null): void => {
   queue = []
 }
 
-// Перехватчик ответов из сервера
+//XXX Перехватчик ответов из сервера
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
     const isLoginRequest =
-      originalRequest?.url?.includes('/token/') && !originalRequest.url.includes('/refresh/') // Игнор авторизации
+      originalRequest?.url?.includes('/token/') && !originalRequest.url.includes('/refresh/') //XXX Игнор авторизации
 
     if (
       error.response?.status !== 401 ||
@@ -81,7 +81,7 @@ api.interceptors.response.use(
         { refresh },
       )
       localStorage.setItem('access_token', data.access)
-      // Берется новый access токен и вмонтируется в заголовок
+      //XXX Берется новый access токен и вмонтируется в заголовок
       if (originalRequest.headers) {
         originalRequest.headers.Authorization = `Bearer ${data.access}`
       }

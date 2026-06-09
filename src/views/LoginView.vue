@@ -3,13 +3,15 @@ import { useAuthStore } from '@/stores/auth'
 import type { AxiosError } from 'axios'
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import BaseButton from '@/components/base/BaseButton.vue'
+import BaseInput from '@/components/base/BaseInput.vue'
 
 interface DjangoErrorData {
   detail?: string
 }
 
 const router = useRouter()
-const route = useRoute() 
+const route = useRoute()
 const auth = useAuthStore()
 
 const username = ref<string>('')
@@ -20,31 +22,29 @@ const error = ref<string | null>(null)
 const successMessage = ref<string | null>(null)
 
 const isFormValid = computed<boolean>(() => {
-    const isUsernameValid = username.value.trim().length >= 3
-    const isPasswordValid = password.value.length >= 6
-    return isUsernameValid && isPasswordValid
-}) 
+  const isUsernameValid = username.value.trim().length >= 3
+  const isPasswordValid = password.value.length >= 6
+  return isUsernameValid && isPasswordValid
+})
 
 async function handleSubmit() {
   if (!isFormValid.value || isLoading.value) return
 
   isLoading.value = true
   error.value = null
-  
+
   try {
     await auth.login(username.value, password.value)
-    const redirectPath = route.query.redirect as string || '/tasks'
-    
-    router.push(redirectPath)
-  } catch(err: unknown) {
-      const axiosError = err as AxiosError<DjangoErrorData>
-      // error.value = axiosError.response?.data?.detail || 'Login error'
-      if (axiosError.response?.data?.detail){
-        error.value = 'Wrong username or password. Try Again.'
-      } else {
-        error.value = 'Something wrong...'
-      }
+    const redirectPath = (route.query.redirect as string) || '/tasks'
 
+    router.push(redirectPath)
+  } catch (err: unknown) {
+    const axiosError = err as AxiosError<DjangoErrorData>
+    if (axiosError.response?.data?.detail) {
+      error.value = 'Wrong username or password. Try Again.'
+    } else {
+      error.value = 'Something wrong...'
+    }
   } finally {
     isLoading.value = false
   }
@@ -58,55 +58,55 @@ onMounted(() => {
     }, 3000)
   }
 })
-
 </script>
 
 <template>
   <div class="login-container">
-
     <div v-if="successMessage" class="success-banner">
-        {{ successMessage }}
+      {{ successMessage }}
     </div>
 
     <form @submit.prevent="handleSubmit" class="login-form">
       <h2>Sign in</h2>
 
       <div class="form-group">
-        <label for="username">Username</label>
-        <input
-          id="username"
+        <!-- [x]инпут -->
+        <BaseInput
           v-model="username"
-          type="text"
-          placeholder="ex: Madiyar"
+          label="Username"
+          placeholder="Enter your username"
           :disabled="isLoading"
           autocomplete="username"
+          :error="error"
         />
       </div>
 
       <div class="form-group">
-        <label for="password">Password</label>
-        <input
-          id="password"
+        <!-- [x] инпут -->
+        <BaseInput
           v-model="password"
+          label="Password"
           type="password"
-          placeholder="your password here..."
+          placeholder="Enter your password"
           :disabled="isLoading"
-          autocomplete="current-password"
+          :error="error"
         />
       </div>
 
       <div v-if="error" class="error-message">
         {{ error }}
       </div>
-
-      <button 
-        type="submit" 
-        class="submit-btn" 
+      <!-- [x] Кнопка -->
+      <BaseButton
+        type="submit"
+        variant="primary"
+        size="lg"
         :disabled="!isFormValid || isLoading"
-        >
-        <span v-if="isLoading" class="btn-spinner"></span>
-        <span v-else>Войти</span>
-      </button>
+        :loading="isLoading"
+        style="width: 100%"
+      >
+        Sign In
+      </BaseButton>
     </form>
   </div>
 </template>
@@ -172,12 +172,14 @@ input {
   border-radius: 4px;
   font-size: 0.95rem;
   box-sizing: border-box;
-  transition: border-color 0.2s ease, background-color 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
 }
 
 input:focus {
   outline: none;
-  border-color: #1db954; 
+  border-color: #1db954;
   background-color: #4a4a4a;
 }
 
@@ -211,7 +213,10 @@ input:disabled {
   align-items: center;
   justify-content: center;
   margin-top: 10px;
-  transition: transform 0.2s ease, background-color 0.2s ease, opacity 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease,
+    opacity 0.2s ease;
 }
 
 .submit-btn:hover:not(:disabled) {
@@ -241,7 +246,11 @@ input:disabled {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 </style>
