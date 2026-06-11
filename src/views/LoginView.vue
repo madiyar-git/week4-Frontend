@@ -1,16 +1,12 @@
 <script setup lang="ts">
 import { useAuthStore } from '@/stores/auth'
-import type { AxiosError } from 'axios'
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useApi } from '@/composables/useApi'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseInput from '@/components/base/BaseInput.vue'
 import BaseCard from '@/components/base/BaseCard.vue'
 import BaseForm from '@/components/base/BaseForm.vue'
-
-interface DjangoErrorData {
-  detail?: string
-}
 
 const router = useRouter()
 const route = useRoute()
@@ -18,17 +14,21 @@ const auth = useAuthStore()
 
 const username = ref<string>('')
 const password = ref<string>('')
-
-const isLoading = ref<boolean>(false)
-const error = ref<string | null>(null)
 const successMessage = ref<string | null>(null)
+
+interface LoginResponse {
+  access: string
+  refresh: string
+}
+
+const { loading: isLoading, error, execute } = useApi<LoginResponse>()
 
 const formErrors = computed(() => {
   if (!error.value) return {}
 
   return {
-    username: error.value,
-    password: error.value,
+    username: 'Wrong username or password. Try Again.',
+    password: 'Wrong username or password. Try Again.',
   }
 })
 
@@ -41,22 +41,20 @@ const isFormValid = computed<boolean>(() => {
 async function handleSubmit() {
   if (!isFormValid.value || isLoading.value) return
 
-  isLoading.value = true
-  error.value = null
+  const result = await execute({
+    method: 'POST',
+    url: 'token/',
+    data: {
+      username: username.value,
+      password: password.value,
+    },
+  })
 
-  try {
-    await auth.login(username.value, password.value)
+  if (result && result.access && result.refresh) {
+    auth.login(username.value, result.access, result.refresh)
+
     const redirectPath = (route.query.redirect as string) || '/tasks'
     router.push(redirectPath)
-  } catch (err: unknown) {
-    const axiosError = err as AxiosError<DjangoErrorData>
-    if (axiosError.response?.data?.detail) {
-      error.value = 'Wrong username or password. Try Again.'
-    } else {
-      error.value = 'Something wrong...'
-    }
-  } finally {
-    isLoading.value = false
   }
 }
 
@@ -99,9 +97,7 @@ onMounted(() => {
           autocomplete="current-password"
         />
 
-        <div v-if="error" class="error-message">
-          {{ error }}
-        </div>
+        <!-- <div v-if="error" class="error-message">Wrong username or password. Try Again.</div> -->
 
         <BaseButton
           type="submit"
@@ -123,16 +119,16 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: start;
   padding: 40px 20px;
   min-height: 70vh;
-}
-
-.login-card {
-  max-width: 400px;
+  width: 22vw;
 }
 
 h2 {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   margin: 0;
   font-size: 1.75rem;
   font-weight: 700;

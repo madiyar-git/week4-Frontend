@@ -1,26 +1,23 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
+import { useApi } from '@/composables/useApi'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseInput from '@/components/base/BaseInput.vue'
 import BaseCard from '@/components/base/BaseCard.vue'
-import type { AxiosError } from 'axios'
 
-interface DjangoRegisterErrorData {
-  username?: string[]
-  detail?: string
+interface RegisterResponse {
+  id: number
+  username: string
 }
 
 const router = useRouter()
-const auth = useAuthStore()
 
 const username = ref<string>('')
 const password = ref<string>('')
 const password_confirm = ref<string>('')
 
-const isLoading = ref<boolean>(false)
-const localError = ref<string | null>(null)
+const { loading: isLoading, error: backendError, execute } = useApi<RegisterResponse>()
 
 const USERNAME_REGEX = /^[a-zA-Z0-9_]+$/
 
@@ -63,24 +60,20 @@ const isFormValid = computed<boolean>(() => {
 async function handleSubmit() {
   if (!isFormValid.value || isLoading.value) return
 
-  isLoading.value = true
-  localError.value = null
-  try {
-    await auth.register(username.value, password.value)
+  const result = await execute({
+    method: 'POST',
+    url: 'register/',
+    data: {
+      username: username.value,
+      password: password.value,
+    },
+  })
+
+  if (result) {
     router.push({
       name: 'login',
       query: { registered: '1' },
     })
-  } catch (err) {
-    const axiosError = err as AxiosError<DjangoRegisterErrorData>
-    const backendUsernameError = axiosError.response?.data?.username?.[0]
-    if (backendUsernameError) {
-      localError.value = backendUsernameError
-    } else {
-      localError.value = axiosError.response?.data?.detail || 'Registration error'
-    }
-  } finally {
-    isLoading.value = false
   }
 }
 </script>
@@ -120,8 +113,8 @@ async function handleSubmit() {
           autocomplete="new-password"
         />
 
-        <div v-if="localError" class="error-box validation-error">
-          {{ localError }}
+        <div v-if="backendError" class="error-box validation-error">
+          {{ backendError }}
         </div>
 
         <div v-if="formErrors.length > 0" class="error-box validation-box">
@@ -152,7 +145,7 @@ async function handleSubmit() {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: start;
   padding: 40px 20px;
   min-height: 80vh;
 }
@@ -162,6 +155,9 @@ async function handleSubmit() {
 }
 
 h2 {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   margin: 0;
   font-size: 1.75rem;
   font-weight: 700;

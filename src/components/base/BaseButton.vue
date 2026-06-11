@@ -44,7 +44,7 @@ const buttonClasses = computed(() => {
   justify-content: center;
   font-family: inherit;
   font-weight: 700;
-  border-radius: 500px;
+  border-radius: 50px;
   border: 1px solid transparent;
   cursor: pointer;
   letter-spacing: 0.5px;

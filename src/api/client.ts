@@ -37,15 +37,12 @@ api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
-    const isLoginRequest =
-      originalRequest?.url?.includes('/token/') && !originalRequest.url.includes('/refresh/') //XXX Игнор авторизации
 
-    if (
-      error.response?.status !== 401 ||
-      !originalRequest ||
-      originalRequest._retry ||
-      isLoginRequest
-    ) {
+    if (!error.response || error.response.status !== 401 || originalRequest?._retry) {
+      return Promise.reject(error)
+    }
+
+    if (originalRequest.url?.includes('token/')) {
       return Promise.reject(error)
     }
 

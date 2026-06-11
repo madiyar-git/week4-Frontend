@@ -60,6 +60,23 @@ const inputClasses = computed(() => {
     </label>
 
     <input
+      v-if="type === 'checkbox'"
+      :id="inputId"
+      v-model="model"
+      type="checkbox"
+      :disabled="isDisabled"
+      :required="required"
+      :class="['base-input__checkbox', { 'base-input__checkbox--error': !!computedError }]"
+      :aria-invalid="!!computedError"
+      v-bind="$attrs"
+    />
+
+    <label v-if="label && type === 'checkbox'" :for="inputId" class="base-input__checkbox-label">
+      {{ label }}
+    </label>
+
+    <input
+      v-if="type !== 'checkbox'"
       :id="inputId"
       v-model="model"
       :type="type"
@@ -90,15 +107,17 @@ const inputClasses = computed(() => {
 .base-input {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  width: 100%;
+  gap: 0.15vw;
+  width: 19.8vw;
   font-family: inherit;
-  margin-bottom: 16px;
+  margin-bottom: 1.2vw;
+  margin-top: 0.3vw;
 }
 
 .base-input__label {
-  color: #ffffff;
-  font-size: 0.875rem;
+  padding-left: 0.2vw;
+  color: #bdbdbd;
+  font-size: 1rem;
   font-weight: 700;
   text-align: left;
 }
@@ -124,7 +143,7 @@ const inputClasses = computed(() => {
 }
 
 .base-input__field::placeholder {
-  color: #a7a7a7;
+  color: #9c9c9c;
 }
 
 .base-input__field:not(:disabled):hover {

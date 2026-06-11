@@ -2,6 +2,7 @@
 import { onMounted, ref, computed } from 'vue'
 import { useTaskStore } from '@/stores/tasks'
 import { storeToRefs } from 'pinia'
+import { useApi } from '@/composables/useApi'
 import type { Task } from '../types/task'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseInput from '@/components/base/BaseInput.vue'
@@ -9,58 +10,82 @@ import BaseCard from '@/components/base/BaseCard.vue'
 import TaskList from '../components/TaskList.vue'
 
 const tasksStore = useTaskStore()
-const { tasks, isLoading, error } = storeToRefs(tasksStore)
+const { tasks } = storeToRefs(tasksStore)
+
+const { loading: isFetchLoading, error: fetchError, execute: fetchExecute } = useApi<Task[]>()
+const { loading: isCreateLoading, error: createError, execute: createExecute } = useApi<Task>()
+const { loading: isActionLoading, error: actionError, execute: actionExecute } = useApi<unknown>()
 
 const newTitle = ref<string>('')
 const newDescription = ref<string>('')
 const newPriority = ref<'low' | 'medium' | 'high'>('medium')
-const isSubmitting = ref<boolean>(false)
-const formError = ref<string | null>(null)
 
 const isFormValid = computed<boolean>(() => {
   return newTitle.value.trim().length >= 3
 })
 
+const isGlobalLoading = computed(
+  () => isFetchLoading.value || isCreateLoading.value || isActionLoading.value,
+)
+
+async function loadTasks(): Promise<void> {
+  const data = await fetchExecute({ method: 'GET', url: 'tasks/' })
+  if (data) {
+    tasks.value = data
+  }
+}
+
 async function handleCreateTask(): Promise<void> {
-  if (!isFormValid.value || isSubmitting.value) return
+  if (!isFormValid.value || isGlobalLoading.value) return
 
-  isSubmitting.value = true
-  formError.value = null
-
-  try {
-    await tasksStore.createTask({
+  const result = await createExecute({
+    method: 'POST',
+    url: 'tasks/',
+    data: {
       title: newTitle.value.trim(),
       description: newDescription.value.trim(),
       priority: newPriority.value,
       completed: false,
-    })
+    },
+  })
 
+  if (result) {
+    tasks.value.unshift(result)
     newTitle.value = ''
     newDescription.value = ''
     newPriority.value = 'medium'
-  } catch (err: unknown) {
-    console.error(err)
-    const errorObject = err as Error
-    formError.value = errorObject.message || 'Failed to create task.'
-  } finally {
-    isSubmitting.value = false
   }
 }
 
 async function handleToggleCompleted(id: number, fields: Partial<Task>): Promise<void> {
-  try {
-    await tasksStore.updateTask(id, fields)
-  } catch (err: unknown) {
-    console.error(err)
-    alert('Failed to update task status.')
+  await actionExecute({
+    method: 'PATCH',
+    url: `tasks/${id}/`,
+    data: fields,
+  })
+
+  if (actionError.value) {
+    const taskIndex = tasks.value.findIndex((t) => t.id === id)
+
+    const targetTask = tasks.value[taskIndex]
+
+    if (targetTask && fields.completed !== undefined) {
+      targetTask.completed = !fields.completed 
+    }
+
+    alert(`Failed to update task status: ${actionError.value}`)
   }
 }
 
 async function handleDeleteTask(id: number): Promise<void> {
-  try {
-    await tasksStore.deleteTask(id)
-  } catch (err: unknown) {
-    console.error(err)
+  await actionExecute({
+    method: 'DELETE',
+    url: `tasks/${id}/`,
+  })
+
+  if (!actionError.value) {
+    tasks.value = tasks.value.filter((t) => t.id !== id)
+  } else {
     alert('Failed to delete task.')
   }
 }
@@ -71,36 +96,33 @@ async function bulkAction(
   if (actionName === 'toggle_all') {
     const areAllCompleted = tasks.value.every((t) => t.completed)
     const newStatus = !areAllCompleted
-    const promises = tasks.value.map((t) => tasksStore.updateTask(t.id, { completed: newStatus }))
 
-    try {
-      await Promise.all(promises)
-    } catch (err: unknown) {
-      console.error(err)
-      alert('Failed to update all tasks.')
-    }
+    const promises = tasks.value.map((t) =>
+      actionExecute({ method: 'PATCH', url: `tasks/${t.id}/`, data: { completed: newStatus } }),
+    )
+
+    await Promise.all(promises)
+    await loadTasks() 
   } else if (actionName === 'clear_completed') {
     const completedTasks = tasks.value.filter((t) => t.completed)
-    try {
-      const promises = completedTasks.map((t) => tasksStore.deleteTask(t.id))
-      await Promise.all(promises)
-    } catch (err: unknown) {
-      console.error(err)
-      alert('Failed to clear completed tasks.')
-    }
+    const promises = completedTasks.map((t) =>
+      actionExecute({ method: 'DELETE', url: `tasks/${t.id}/` }),
+    )
+
+    await Promise.all(promises)
+    await loadTasks()
   } else if (actionName === 'clear_all') {
-    try {
-      const promises = tasks.value.map((t) => tasksStore.deleteTask(t.id))
-      await Promise.all(promises)
-    } catch (err: unknown) {
-      console.error(err)
-      alert('Failed to clear all tasks.')
-    }
+    const promises = tasks.value.map((t) =>
+      actionExecute({ method: 'DELETE', url: `tasks/${t.id}/` }),
+    )
+
+    await Promise.all(promises)
+    await loadTasks()
   }
 }
 
 onMounted(() => {
-  tasksStore.fetchTasks()
+  loadTasks()
 })
 </script>
 
@@ -121,8 +143,8 @@ onMounted(() => {
               type="text"
               label="Title"
               placeholder="Task title (min 3 symbols)..."
-              :disabled="isSubmitting"
-              :error="formError || undefined"
+              :disabled="isGlobalLoading"
+              :error="createError || undefined"
               required
             />
           </div>
@@ -132,7 +154,7 @@ onMounted(() => {
               v-model="newDescription"
               label="Description"
               placeholder="Description (optional)..."
-              :disabled="isSubmitting"
+              :disabled="isGlobalLoading"
             />
           </div>
 
@@ -142,7 +164,7 @@ onMounted(() => {
               id="priority"
               v-model="newPriority"
               :class="newPriority"
-              :disabled="isSubmitting"
+              :disabled="isGlobalLoading"
             >
               <option value="low">Low</option>
               <option value="medium">Medium</option>
@@ -154,8 +176,8 @@ onMounted(() => {
             type="submit"
             variant="primary"
             size="lg"
-            :disabled="!isFormValid || isLoading"
-            :loading="isLoading"
+            :disabled="!isFormValid || isGlobalLoading"
+            :loading="isCreateLoading"
             style="width: 100%; margin-top: 12px"
           >
             Create New Task
@@ -165,25 +187,25 @@ onMounted(() => {
 
       <hr class="divider" />
 
-      <div v-if="isLoading" class="spinner-container">
+      <div v-if="isFetchLoading" class="spinner-container">
         <div class="spinner"></div>
         <p>Loading tasks from server...</p>
       </div>
 
-      <div v-else-if="error" class="error-banner">
-        <p>Error: {{ error }}</p>
+      <div v-else-if="fetchError" class="error-banner">
+        <p>Error: {{ fetchError }}</p>
         <BaseButton
           type="button"
           variant="secondary"
           size="sm"
           style="width: 60%"
-          @click="tasksStore.fetchTasks()"
+          @click="loadTasks"
         >
           Retry
         </BaseButton>
       </div>
 
-      <p v-if="!isLoading && tasks.length === 0" class="empty-text">
+      <p v-if="!isFetchLoading && tasks.length === 0" class="empty-text">
         No tasks found. Create your first task!
       </p>
 

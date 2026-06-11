@@ -28,6 +28,11 @@ const router = createRouter({
       name: 'base-input-demo',
       component: () => import('@/views/dev/BaseInputDemo.vue'),
     },
+    {
+      path: '/tasks/stats',
+      name: 'use-api-demo',
+      component: () => import('@/views/dev/UseApiDemo.vue'),
+    },
   ],
 })
 

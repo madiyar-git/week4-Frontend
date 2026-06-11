@@ -36,7 +36,7 @@ const emit = defineEmits<{
           type="checkbox"
           v-model="task.completed"
           class="checkbox"
-          @change="$emit('update', task.id, { completed: task.completed })"
+          @change.stop="$emit('update', task.id, { completed: task.completed })"
         />
         <!-- [x]кнопка -->
         <BaseButton
