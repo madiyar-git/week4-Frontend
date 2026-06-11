@@ -91,6 +91,10 @@ const emit = defineEmits<{
   border: 1px solid #282828;
   padding: 20px;
   border-radius: 8px;
+  min-height: 7vw;
+  display: flex;
+  flex-direction: column;
+
   transition:
     background-color 0.3s ease,
     border-color 0.3s ease,
@@ -107,6 +111,7 @@ const emit = defineEmits<{
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .title {
@@ -155,6 +160,7 @@ const emit = defineEmits<{
   color: #535353;
   font-style: italic;
   cursor: pointer;
+  line-height: 1.4;
 }
 .description-placeholder:hover {
   color: #b3b3b3;
@@ -201,7 +207,6 @@ const emit = defineEmits<{
 }
 .delete-btn:hover {
   color: #ff4d4f;
-  color: #141414;
   transform: scale(1.1);
 }
 
@@ -215,8 +220,9 @@ const emit = defineEmits<{
 }
 
 .priority-badge {
-  display: inline-block;
-  margin-top: 10px;
+  margin-top: auto;
+  padding-top: 12px;
+  align-self: flex-start;
   padding: 4px 12px;
   border-radius: 4px;
   font-size: 0.75rem;

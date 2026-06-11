@@ -8,6 +8,7 @@ import BaseButton from '@/components/base/BaseButton.vue'
 import BaseInput from '@/components/base/BaseInput.vue'
 import BaseCard from '@/components/base/BaseCard.vue'
 import TaskList from '../components/TaskList.vue'
+import { usePagination } from '@/composables/usePagination'
 
 const tasksStore = useTaskStore()
 const { tasks } = storeToRefs(tasksStore)
@@ -19,6 +20,8 @@ const { loading: isActionLoading, error: actionError, execute: actionExecute } =
 const newTitle = ref<string>('')
 const newDescription = ref<string>('')
 const newPriority = ref<'low' | 'medium' | 'high'>('medium')
+
+const { pagedItems, currentPage, totalPages, next, prev } = usePagination(tasks, 5)
 
 const isFormValid = computed<boolean>(() => {
   return newTitle.value.trim().length >= 3
@@ -70,7 +73,7 @@ async function handleToggleCompleted(id: number, fields: Partial<Task>): Promise
     const targetTask = tasks.value[taskIndex]
 
     if (targetTask && fields.completed !== undefined) {
-      targetTask.completed = !fields.completed 
+      targetTask.completed = !fields.completed
     }
 
     alert(`Failed to update task status: ${actionError.value}`)
@@ -102,7 +105,7 @@ async function bulkAction(
     )
 
     await Promise.all(promises)
-    await loadTasks() 
+    await loadTasks()
   } else if (actionName === 'clear_completed') {
     const completedTasks = tasks.value.filter((t) => t.completed)
     const promises = completedTasks.map((t) =>
@@ -130,92 +133,111 @@ onMounted(() => {
   <main class="app-main">
     <div class="tasks-container">
       <h2>My Tasks</h2>
+      <div class="tasks-page">
+        <BaseCard class="task-form-card">
+          <template #header>
+            <h3>New Task</h3>
+          </template>
 
-      <BaseCard class="task-form-card">
-        <template #header>
-          <h3>New Task</h3>
-        </template>
+          <form @submit.prevent="handleCreateTask" class="create-task-form">
+            <div class="form-group">
+              <BaseInput
+                v-model="newTitle"
+                type="text"
+                label="Title"
+                placeholder="Task title (min 3 symbols)..."
+                :disabled="isGlobalLoading"
+                :error="createError || undefined"
+                required
+              />
+            </div>
 
-        <form @submit.prevent="handleCreateTask" class="create-task-form">
-          <div class="form-group">
-            <BaseInput
-              v-model="newTitle"
-              type="text"
-              label="Title"
-              placeholder="Task title (min 3 symbols)..."
-              :disabled="isGlobalLoading"
-              :error="createError || undefined"
-              required
-            />
-          </div>
+            <div class="form-group">
+              <BaseInput
+                v-model="newDescription"
+                label="Description"
+                placeholder="Description (optional)..."
+                :disabled="isGlobalLoading"
+              />
+            </div>
 
-          <div class="form-group">
-            <BaseInput
-              v-model="newDescription"
-              label="Description"
-              placeholder="Description (optional)..."
-              :disabled="isGlobalLoading"
-            />
-          </div>
+            <div class="form-group">
+              <label for="priority">Priority</label>
+              <select
+                id="priority"
+                v-model="newPriority"
+                :class="newPriority"
+                :disabled="isGlobalLoading"
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
 
-          <div class="form-group">
-            <label for="priority">Priority</label>
-            <select
-              id="priority"
-              v-model="newPriority"
-              :class="newPriority"
-              :disabled="isGlobalLoading"
+            <BaseButton
+              type="submit"
+              variant="primary"
+              size="lg"
+              :disabled="!isFormValid || isGlobalLoading"
+              :loading="isCreateLoading"
+              style="width: 100%; margin-top: 12px"
             >
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </select>
-          </div>
+              Create New Task
+            </BaseButton>
+          </form>
+        </BaseCard>
+
+        <hr class="divider" />
+
+        <div v-if="isFetchLoading" class="spinner-container">
+          <div class="spinner"></div>
+          <p>Loading tasks from server...</p>
+        </div>
+
+        <div v-else-if="fetchError" class="error-banner">
+          <p>Error: {{ fetchError }}</p>
+          <BaseButton
+            type="button"
+            variant="secondary"
+            size="sm"
+            style="width: 60%"
+            @click="loadTasks"
+          >
+            Retry
+          </BaseButton>
+        </div>
+
+        <p v-if="!isFetchLoading && tasks.length === 0" class="empty-text">
+          No tasks found. Create your first task!
+        </p>
+        <TaskList
+          v-else-if="tasks.length > 0"
+          v-model="pagedItems"
+          @delete="handleDeleteTask"
+          @update="handleToggleCompleted"
+          @bulk-action="bulkAction"
+        />
+        <div class="pagination-controls">
+          <BaseButton
+            variant="secondary"
+            :disabled="currentPage === 1 || isGlobalLoading"
+            @click="prev"
+          >
+            Prev
+          </BaseButton>
+
+          <span class="pagination-indicator"> {{ currentPage }} / {{ totalPages }} </span>
 
           <BaseButton
-            type="submit"
-            variant="primary"
-            size="lg"
-            :disabled="!isFormValid || isGlobalLoading"
-            :loading="isCreateLoading"
-            style="width: 100%; margin-top: 12px"
+            variant="secondary"
+            :disabled="currentPage === totalPages || isGlobalLoading"
+            @click="next"
           >
-            Create New Task
+            Next
           </BaseButton>
-        </form>
-      </BaseCard>
-
-      <hr class="divider" />
-
-      <div v-if="isFetchLoading" class="spinner-container">
-        <div class="spinner"></div>
-        <p>Loading tasks from server...</p>
+        </div>
       </div>
-
-      <div v-else-if="fetchError" class="error-banner">
-        <p>Error: {{ fetchError }}</p>
-        <BaseButton
-          type="button"
-          variant="secondary"
-          size="sm"
-          style="width: 60%"
-          @click="loadTasks"
-        >
-          Retry
-        </BaseButton>
-      </div>
-
-      <p v-if="!isFetchLoading && tasks.length === 0" class="empty-text">
-        No tasks found. Create your first task!
-      </p>
-
-      <TaskList
-        v-else-if="tasks.length > 0"
-        v-model="tasks"
-        @delete="handleDeleteTask"
-        @update="handleToggleCompleted"
-        @bulk-action="bulkAction"
-      />
     </div>
   </main>
 </template>
@@ -385,5 +407,20 @@ select option {
 .error-banner p {
   margin: 0;
   font-size: 0.95rem;
+}
+
+.pagination-controls {
+  display: flex;
+  margin-top: 1vw;
+  justify-content: center;
+  align-items: center;
+  gap: 1vw;
+}
+
+.pagination-indicator {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  line-height: 1;
 }
 </style>
