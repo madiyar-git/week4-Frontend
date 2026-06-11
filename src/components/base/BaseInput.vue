@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, inject } from 'vue'
+import { formContextKey } from './form-context'
 
 interface Props {
+  name?: string
   label?: string
   type?: string
   placeholder?: string
@@ -13,17 +15,40 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   type: 'text',
-  placeholder: '',
   required: false,
   disabled: false,
 })
 
 const model = defineModel<string | boolean | undefined>({ required: true })
-const inputId = 'input-${crypto.randomUUID()}'
-const descId = 'desc-${crypto.randomUUID()}'
+
+const inputId = `input-${crypto.randomUUID()}`
+const descId = `desc-${crypto.randomUUID()}`
+
+const formContext = inject(formContextKey, null)
+
+const computedError = computed(() => {
+  if (props.error) return props.error
+
+  if (formContext && props.name) {
+    const formErrors = formContext.errors.value
+    const inputError = formErrors[props.name]
+
+    if (Array.isArray(inputError)) {
+      return inputError[0]
+    }
+    return inputError || null
+  }
+
+  return null
+})
+
+const isDisabled = computed(() => {
+  if (props.disabled) return true
+  return formContext ? formContext.isSubmitting.value : false
+})
 
 const inputClasses = computed(() => {
-  return ['base-input__field', { 'base-input__field--error': !!props.error }]
+  return ['base-input__field', { 'base-input__field--error': !!computedError.value }]
 })
 </script>
 
@@ -39,21 +64,21 @@ const inputClasses = computed(() => {
       v-model="model"
       :type="type"
       :placeholder="placeholder"
-      :disabled="disabled"
+      :disabled="isDisabled"
       :required="required"
       :class="inputClasses"
-      :aria-invalid="!!error"
-      :aria-describedby="error || helper ? descId : undefined"
+      :aria-invalid="!!computedError"
+      :aria-describedby="computedError || helper ? descId : undefined"
       v-bind="$attrs"
     />
 
     <p
-      v-if="error"
+      v-if="computedError"
       :id="descId"
       class="base-input__message base-input__message--error"
       role="alert"
     >
-      {{ error }}
+      {{ computedError }}
     </p>
     <p v-else-if="helper" :id="descId" class="base-input__message base-input__message--helper">
       {{ helper }}
@@ -98,7 +123,7 @@ const inputClasses = computed(() => {
   box-sizing: border-box;
 }
 
-.base-input__field:slot-placeholder {
+.base-input__field::placeholder {
   color: #a7a7a7;
 }
 

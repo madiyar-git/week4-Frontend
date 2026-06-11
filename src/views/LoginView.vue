@@ -6,6 +6,7 @@ import { useRouter, useRoute } from 'vue-router'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseInput from '@/components/base/BaseInput.vue'
 import BaseCard from '@/components/base/BaseCard.vue'
+import BaseForm from '@/components/base/BaseForm.vue'
 
 interface DjangoErrorData {
   detail?: string
@@ -22,6 +23,15 @@ const isLoading = ref<boolean>(false)
 const error = ref<string | null>(null)
 const successMessage = ref<string | null>(null)
 
+const formErrors = computed(() => {
+  if (!error.value) return {}
+
+  return {
+    username: error.value,
+    password: error.value,
+  }
+})
+
 const isFormValid = computed<boolean>(() => {
   const isUsernameValid = username.value.trim().length >= 3
   const isPasswordValid = password.value.length >= 6
@@ -37,7 +47,6 @@ async function handleSubmit() {
   try {
     await auth.login(username.value, password.value)
     const redirectPath = (route.query.redirect as string) || '/tasks'
-
     router.push(redirectPath)
   } catch (err: unknown) {
     const axiosError = err as AxiosError<DjangoErrorData>
@@ -72,23 +81,21 @@ onMounted(() => {
         <h2>Sign in</h2>
       </template>
 
-      <form @submit.prevent="handleSubmit" class="login-form">
+      <BaseForm :errors="formErrors" :is-submitting="isLoading" @submit="handleSubmit">
         <BaseInput
           v-model="username"
+          name="username"
           label="Username"
           placeholder="Enter your username"
-          :disabled="isLoading"
           autocomplete="username"
-          :error="error"
         />
 
         <BaseInput
           v-model="password"
+          name="password"
           label="Password"
           type="password"
           placeholder="Enter your password"
-          :disabled="isLoading"
-          :error="error"
           autocomplete="current-password"
         />
 
@@ -102,11 +109,11 @@ onMounted(() => {
           size="lg"
           :disabled="!isFormValid || isLoading"
           :loading="isLoading"
-          style="width: 100%; margin-top: 12px;"
+          style="width: 100%; margin-top: 12px"
         >
           Sign In
         </BaseButton>
-      </form>
+      </BaseForm>
     </BaseCard>
   </div>
 </template>
@@ -130,11 +137,6 @@ h2 {
   font-size: 1.75rem;
   font-weight: 700;
   color: #ffffff;
-}
-
-.login-form {
-  display: flex;
-  flex-direction: column;
 }
 
 .error-message {
