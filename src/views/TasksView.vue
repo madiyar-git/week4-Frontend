@@ -9,6 +9,7 @@ import BaseInput from '@/components/base/BaseInput.vue'
 import BaseCard from '@/components/base/BaseCard.vue'
 import TaskList from '../components/TaskList.vue'
 import { usePagination } from '@/composables/usePagination'
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal.vue'
 
 const tasksStore = useTaskStore()
 const { tasks } = storeToRefs(tasksStore)
@@ -22,6 +23,9 @@ const newDescription = ref<string>('')
 const newPriority = ref<'low' | 'medium' | 'high'>('medium')
 
 const { pagedItems, currentPage, totalPages, next, prev } = usePagination(tasks, 5)
+
+const isDeleteModalOpen = ref<boolean>(false)
+const taskToDelete = ref<Task | null>(null)
 
 const isFormValid = computed<boolean>(() => {
   return newTitle.value.trim().length >= 3
@@ -80,17 +84,37 @@ async function handleToggleCompleted(id: number, fields: Partial<Task>): Promise
   }
 }
 
-async function handleDeleteTask(id: number): Promise<void> {
+function handleDeleteTask(id: number): void {
+  const foundTask = tasks.value.find((t) => t.id === id)
+  if (foundTask) {
+    taskToDelete.value = foundTask
+    isDeleteModalOpen.value = true
+  }
+}
+
+async function confirmDeleteTask(): Promise<void> {
+  if (!taskToDelete.value) return
+
+  const targetId = taskToDelete.value.id
+
+  // Запускаем твой стандартный actionExecute (isActionLoading станет true)
   await actionExecute({
     method: 'DELETE',
-    url: `tasks/${id}/`,
+    url: `tasks/${targetId}/`,
   })
 
   if (!actionError.value) {
-    tasks.value = tasks.value.filter((t) => t.id !== id)
+    // Удаляем из локального стора Pinia при успешном ответе сервера
+    tasks.value = tasks.value.filter((t) => t.id !== targetId)
+    closeDeleteModal()
   } else {
-    alert('Failed to delete task.')
+    alert(`Не удалось удалить задачу: ${actionError.value}`)
   }
+}
+
+function closeDeleteModal(): void {
+  isDeleteModalOpen.value = false
+  taskToDelete.value = null
 }
 
 async function bulkAction(
@@ -240,6 +264,13 @@ onMounted(() => {
       </div>
     </div>
   </main>
+  <ConfirmDeleteModal
+    :open="isDeleteModalOpen"
+    :task-title="taskToDelete?.title || ''"
+    :loading="isActionLoading"
+    @close="closeDeleteModal"
+    @confirm="confirmDeleteTask"
+  />
 </template>
 
 <style scoped>

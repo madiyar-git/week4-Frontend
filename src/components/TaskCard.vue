@@ -195,19 +195,34 @@ const emit = defineEmits<{
 }
 
 .delete-btn {
-  background: none;
-  border: none;
-  color: #b3b3b3;
-  font-size: 1.4rem;
-  cursor: pointer;
-  padding: 0;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  min-width: auto !important;
+  min-height: auto !important;
+  padding: 4px 8px !important;
+  border-radius: 6px !important;
+  color: #535353 !important;
+  font-size: 1.4rem !important;
+  line-height: 0.8 !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+
   transition:
     color 0.2s,
-    transform 0.2s;
+    background-color 0.2s,
+    transform 0.2s !important;
 }
+
 .delete-btn:hover {
-  color: #ff4d4f;
+  color: #ff4d4f !important;
+  background-color: rgba(255, 77, 79, 0.1) !important;
   transform: scale(1.1);
+}
+
+.delete-btn:active {
+  transform: scale(0.95);
 }
 
 .is-completed {
