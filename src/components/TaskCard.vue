@@ -21,7 +21,6 @@ const emit = defineEmits<{
         {{ task.title && task.title.trim() !== '' ? task.title : 'No name...' }}
       </h3>
 
-      <!-- [x] инпут -->
       <BaseInput
         v-else
         v-model="task.title"
@@ -31,14 +30,12 @@ const emit = defineEmits<{
       />
 
       <div class="buttons">
-        <!-- [x]инпут -->
         <BaseInput
           type="checkbox"
           v-model="task.completed"
           class="checkbox"
           @change.stop="$emit('update', task.id, { completed: task.completed })"
         />
-        <!-- [x]кнопка -->
         <BaseButton
           type="submit"
           variant="danger"
@@ -62,7 +59,6 @@ const emit = defineEmits<{
       </p>
     </div>
 
-    <!-- [x] инпут -->
     <BaseInput
       v-else
       v-model="task.description"

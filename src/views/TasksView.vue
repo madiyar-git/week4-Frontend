@@ -10,6 +10,7 @@ import BaseCard from '@/components/base/BaseCard.vue'
 import TaskList from '../components/TaskList.vue'
 import { usePagination } from '@/composables/usePagination'
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal.vue'
+import { useSaveInClipBoard } from '@/composables/useSaveInClipBoard.ts'
 
 const tasksStore = useTaskStore()
 const { tasks } = storeToRefs(tasksStore)
@@ -61,6 +62,7 @@ async function handleCreateTask(): Promise<void> {
     newTitle.value = ''
     newDescription.value = ''
     newPriority.value = 'medium'
+    currentPage.value = 1
   }
 }
 
@@ -97,18 +99,16 @@ async function confirmDeleteTask(): Promise<void> {
 
   const targetId = taskToDelete.value.id
 
-  // Запускаем твой стандартный actionExecute (isActionLoading станет true)
   await actionExecute({
     method: 'DELETE',
     url: `tasks/${targetId}/`,
   })
 
   if (!actionError.value) {
-    // Удаляем из локального стора Pinia при успешном ответе сервера
     tasks.value = tasks.value.filter((t) => t.id !== targetId)
     closeDeleteModal()
   } else {
-    alert(`Не удалось удалить задачу: ${actionError.value}`)
+    alert(`Delete error: ${actionError.value}`)
   }
 }
 
@@ -156,7 +156,7 @@ onMounted(() => {
 <template>
   <main class="app-main">
     <div class="tasks-container">
-      <h2>My Tasks</h2>
+      <h2 @click="useSaveInClipBoard('My Tasks')">My Tasks</h2>
       <div class="tasks-page">
         <BaseCard class="task-form-card">
           <template #header>

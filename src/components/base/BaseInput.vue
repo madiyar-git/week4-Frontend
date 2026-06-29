@@ -12,7 +12,6 @@ interface Props {
   required?: boolean
   disabled?: boolean
 }
-
 const props = withDefaults(defineProps<Props>(), {
   type: 'text',
   required: false,

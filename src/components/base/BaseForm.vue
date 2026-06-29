@@ -1,4 +1,3 @@
-// [ ]provide(formContextKey, { errors, isSubmitting }), @submit.prevent, novalidate, слот
 <script setup lang="ts">
 import { provide, computed } from 'vue';
 import { formContextKey } from './form-context';
@@ -16,12 +15,12 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   submit: []
 }>()
-const fotmContext = {
+const formContext = {
   errors: computed(() => props.errors),
   isSubmitting: computed(() => props.isSubmitting)
 }
 
-provide(formContextKey, fotmContext)
+provide(formContextKey, formContext)
 
 function onFormSubmit(){
   if (props.isSubmitting) return

@@ -1,4 +1,3 @@
-//[ ] типизированный formContextKey: InjectionKey<FormContext> = Symbol(...)
 import type { InjectionKey, ComputedRef } from 'vue'
 
 export interface FormContext {
@@ -6,4 +5,4 @@ export interface FormContext {
   isSubmitting: ComputedRef<boolean>
 }
 
-export const formContextKey: InjectionKey<FormContext> = Symbol('FormContext')
+export const formContextKey: InjectionKey<FormContext> = Symbol('FormContext') //[x] изучить почему я так объявляю ключ

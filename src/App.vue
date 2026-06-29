@@ -34,7 +34,6 @@ function handleLogout(): void {
 
         <div v-if="isAuthenticated" class="user-menu">
           <span class="username-display">Hi, {{ username }}</span>
-        <!-- [x] Кнопка -->
           <BaseButton
             type="submit"
             variant="danger"
