@@ -1,23 +1,23 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { useApi } from '@/composables/useApi'
+import { onMounted } from 'vue';
+import { useApi } from '@/composables/useApi';
 
 interface StatDetail {
-  total_tasks: number
-  completed_tasks: number
-  active_tasks: number
+  total_tasks: number;
+  completed_tasks: number;
+  active_tasks: number;
 }
 
 interface StatsResponse {
-  orm: StatDetail
-  raw: StatDetail
+  orm: StatDetail;
+  raw: StatDetail;
 }
 
-const { data: stats, loading, error, execute } = useApi<StatsResponse>()
+const { data: stats, loading, error, execute } = useApi<StatsResponse>();
 
 onMounted(() => {
-  execute({ method: 'GET', url: 'tasks/stats/' })
-})
+  execute({ method: 'GET', url: 'tasks/stats/' });
+});
 </script>
 
 <template>

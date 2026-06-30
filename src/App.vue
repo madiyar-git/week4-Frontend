@@ -1,21 +1,21 @@
 <script setup lang="ts">
-import { RouterLink, RouterView, useRouter } from 'vue-router'
-import { useAuthStore } from './stores/auth'
-import { storeToRefs } from 'pinia'
-import { useTaskStore } from './stores/tasks'
-import BaseButton from '@/components/base/BaseButton.vue'
+import { RouterLink, RouterView, useRouter } from 'vue-router';
+import { useAuthStore } from './stores/auth';
+import { storeToRefs } from 'pinia';
+import { useTaskStore } from './stores/tasks';
+import BaseButton from '@/components/base/BaseButton.vue';
 
-const router = useRouter()
-const authStore = useAuthStore()
-const tasksStore = useTaskStore()
+const router = useRouter();
+const authStore = useAuthStore();
+const tasksStore = useTaskStore();
 
-const { isAuthenticated, username } = storeToRefs(authStore)
-const { logout } = authStore
+const { isAuthenticated, username } = storeToRefs(authStore);
+const { logout } = authStore;
 
 function handleLogout(): void {
-  logout()
-  tasksStore.reset()
-  router.push('/login')
+  logout();
+  tasksStore.reset();
+  router.push('/login');
 }
 </script>
 

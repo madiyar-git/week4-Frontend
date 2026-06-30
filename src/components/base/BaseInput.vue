@@ -1,54 +1,54 @@
 <script setup lang="ts">
-import { computed, inject } from 'vue'
-import { formContextKey } from './form-context'
+import { computed, inject } from 'vue';
+import { formContextKey } from './form-context';
 
 interface Props {
-  name?: string
-  label?: string
-  type?: string
-  placeholder?: string
-  error?: string | null
-  helper?: string
-  required?: boolean
-  disabled?: boolean
+  name?: string;
+  label?: string;
+  type?: string;
+  placeholder?: string;
+  error?: string | null;
+  helper?: string;
+  required?: boolean;
+  disabled?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
   type: 'text',
   required: false,
-  disabled: false,
-})
+  disabled: false
+});
 
-const model = defineModel<string | boolean | undefined>({ required: true })
+const model = defineModel<string | boolean | undefined>({ required: true });
 
-const inputId = `input-${crypto.randomUUID()}`
-const descId = `desc-${crypto.randomUUID()}`
+const inputId = `input-${crypto.randomUUID()}`;
+const descId = `desc-${crypto.randomUUID()}`;
 
-const formContext = inject(formContextKey, null)
+const formContext = inject(formContextKey, null);
 
 const computedError = computed(() => {
-  if (props.error) return props.error
+  if (props.error) return props.error;
 
   if (formContext && props.name) {
-    const formErrors = formContext.errors.value
-    const inputError = formErrors[props.name]
+    const formErrors = formContext.errors.value;
+    const inputError = formErrors[props.name];
 
     if (Array.isArray(inputError)) {
-      return inputError[0]
+      return inputError[0];
     }
-    return inputError || null
+    return inputError || null;
   }
 
-  return null
-})
+  return null;
+});
 
 const isDisabled = computed(() => {
-  if (props.disabled) return true
-  return formContext ? formContext.isSubmitting.value : false
-})
+  if (props.disabled) return true;
+  return formContext ? formContext.isSubmitting.value : false;
+});
 
 const inputClasses = computed(() => {
-  return ['base-input__field', { 'base-input__field--error': !!computedError.value }]
-})
+  return ['base-input__field', { 'base-input__field--error': !!computedError.value }];
+});
 </script>
 
 <template>

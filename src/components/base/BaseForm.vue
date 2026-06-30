@@ -3,30 +3,29 @@ import { provide, computed } from 'vue';
 import { formContextKey } from './form-context';
 
 interface Props {
-  errors?: Record<string, string | string[] | undefined | null>
-  isSubmitting?: boolean
+  errors?: Record<string, string | string[] | undefined | null>;
+  isSubmitting?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   errors: () => ({}),
   isSubmitting: false
-})
+});
 
 const emit = defineEmits<{
-  submit: []
-}>()
+  submit: [];
+}>();
 const formContext = {
   errors: computed(() => props.errors),
   isSubmitting: computed(() => props.isSubmitting)
+};
+
+provide(formContextKey, formContext);
+
+function onFormSubmit() {
+  if (props.isSubmitting) return;
+  emit('submit');
 }
-
-provide(formContextKey, formContext)
-
-function onFormSubmit(){
-  if (props.isSubmitting) return
-  emit('submit')
-}
-
 </script>
 
 <template>

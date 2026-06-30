@@ -1,71 +1,71 @@
 <script setup lang="ts">
-import { useAuthStore } from '@/stores/auth'
-import { ref, computed, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { useApi } from '@/composables/useApi'
-import BaseButton from '@/components/base/BaseButton.vue'
-import BaseInput from '@/components/base/BaseInput.vue'
-import BaseCard from '@/components/base/BaseCard.vue'
-import BaseForm from '@/components/base/BaseForm.vue'
+import { useAuthStore } from '@/stores/auth';
+import { ref, computed, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import { useApi } from '@/composables/useApi';
+import BaseButton from '@/components/base/BaseButton.vue';
+import BaseInput from '@/components/base/BaseInput.vue';
+import BaseCard from '@/components/base/BaseCard.vue';
+import BaseForm from '@/components/base/BaseForm.vue';
 
-const router = useRouter()
-const route = useRoute()
-const auth = useAuthStore()
+const router = useRouter();
+const route = useRoute();
+const auth = useAuthStore();
 
-const username = ref<string>('')
-const password = ref<string>('')
-const successMessage = ref<string | null>(null)
+const username = ref<string>('');
+const password = ref<string>('');
+const successMessage = ref<string | null>(null);
 
 interface LoginResponse {
-  access: string
-  refresh: string
+  access: string;
+  refresh: string;
 }
 
-const { loading: isLoading, error, execute } = useApi<LoginResponse>()
+const { loading: isLoading, error, execute } = useApi<LoginResponse>();
 
 const formErrors = computed(() => {
-  if (!error.value) return {}
+  if (!error.value) return {};
 
   return {
     username: 'Wrong username or password. Try Again.',
-    password: 'Wrong username or password. Try Again.',
-  }
-})
+    password: 'Wrong username or password. Try Again.'
+  };
+});
 
 const isFormValid = computed<boolean>(() => {
-  const isUsernameValid = username.value.trim().length >= 3
-  const isPasswordValid = password.value.length >= 6
-  return isUsernameValid && isPasswordValid
-})
+  const isUsernameValid = username.value.trim().length >= 3;
+  const isPasswordValid = password.value.length >= 6;
+  return isUsernameValid && isPasswordValid;
+});
 
 async function handleSubmit() {
-  if (!isFormValid.value || isLoading.value) return
+  if (!isFormValid.value || isLoading.value) return;
 
   const result = await execute({
     method: 'POST',
     url: 'token/',
     data: {
       username: username.value,
-      password: password.value,
-    },
-  })
+      password: password.value
+    }
+  });
 
   if (result && result.access && result.refresh) {
-    auth.login(username.value, result.access, result.refresh)
+    auth.login(username.value, result.access, result.refresh);
 
-    const redirectPath = (route.query.redirect as string) || '/tasks'
-    router.push(redirectPath)
+    const redirectPath = (route.query.redirect as string) || '/tasks';
+    router.push(redirectPath);
   }
 }
 
 onMounted(() => {
   if (route.query.registered === '1') {
-    successMessage.value = 'You have successfully registered! Please log in now.'
+    successMessage.value = 'You have successfully registered! Please log in now.';
     setTimeout(() => {
-      router.replace({ query: {} })
-    }, 3000)
+      router.replace({ query: {} });
+    }, 3000);
   }
-})
+});
 </script>
 
 <template>

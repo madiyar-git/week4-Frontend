@@ -1,22 +1,22 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed } from 'vue';
 
 interface Props {
-  padded?: boolean
-  hoverable?: boolean
+  padded?: boolean;
+  hoverable?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   padded: true,
-  hoverable: false,
-})
+  hoverable: false
+});
 
 const cardClasses = computed(() => {
   return [
     'base-card',
-    { 'base-card--padded': props.padded, 'base-card--hoverable': props.hoverable },
-  ]
-})
+    { 'base-card--padded': props.padded, 'base-card--hoverable': props.hoverable }
+  ];
+});
 </script>
 
 <template>

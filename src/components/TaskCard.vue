@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import type { Task } from '../types/task'
-import BaseButton from '@/components/base/BaseButton.vue'
-import BaseInput from '@/components/base/BaseInput.vue'
-import { ref } from 'vue'
+import type { Task } from '../types/task';
+import BaseButton from '@/components/base/BaseButton.vue';
+import BaseInput from '@/components/base/BaseInput.vue';
+import { ref } from 'vue';
 
-const isEditing = ref(false)
-const isEditingDesc = ref(false)
-const task = defineModel<Task>({ required: true })
+const isEditing = ref(false);
+const isEditingDesc = ref(false);
+const task = defineModel<Task>({ required: true });
 
 const emit = defineEmits<{
-  delete: [taskId: number]
-  update: [taskId: number, fields: Partial<Task>]
-}>()
+  delete: [taskId: number];
+  update: [taskId: number, fields: Partial<Task>];
+}>();
 </script>
 
 <template>

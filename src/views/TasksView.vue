@@ -1,50 +1,50 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
-import { useTaskStore } from '@/stores/tasks'
-import { storeToRefs } from 'pinia'
-import { useApi } from '@/composables/useApi'
-import type { Task } from '../types/task'
-import BaseButton from '@/components/base/BaseButton.vue'
-import BaseInput from '@/components/base/BaseInput.vue'
-import BaseCard from '@/components/base/BaseCard.vue'
-import TaskList from '../components/TaskList.vue'
-import { usePagination } from '@/composables/usePagination'
-import ConfirmDeleteModal from '../components/ConfirmDeleteModal.vue'
-import { useSaveInClipBoard } from '@/composables/useSaveInClipBoard.ts'
+import { onMounted, ref, computed } from 'vue';
+import { useTaskStore } from '@/stores/tasks';
+import { storeToRefs } from 'pinia';
+import { useApi } from '@/composables/useApi';
+import type { Task } from '../types/task';
+import BaseButton from '@/components/base/BaseButton.vue';
+import BaseInput from '@/components/base/BaseInput.vue';
+import BaseCard from '@/components/base/BaseCard.vue';
+import TaskList from '../components/TaskList.vue';
+import { usePagination } from '@/composables/usePagination';
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal.vue';
+import { useSaveInClipBoard } from '@/composables/useSaveInClipBoard.ts';
 
-const tasksStore = useTaskStore()
-const { tasks } = storeToRefs(tasksStore)
+const tasksStore = useTaskStore();
+const { tasks } = storeToRefs(tasksStore);
 
-const { loading: isFetchLoading, error: fetchError, execute: fetchExecute } = useApi<Task[]>()
-const { loading: isCreateLoading, error: createError, execute: createExecute } = useApi<Task>()
-const { loading: isActionLoading, error: actionError, execute: actionExecute } = useApi<unknown>()
+const { loading: isFetchLoading, error: fetchError, execute: fetchExecute } = useApi<Task[]>();
+const { loading: isCreateLoading, error: createError, execute: createExecute } = useApi<Task>();
+const { loading: isActionLoading, error: actionError, execute: actionExecute } = useApi<unknown>();
 
-const newTitle = ref<string>('')
-const newDescription = ref<string>('')
-const newPriority = ref<'low' | 'medium' | 'high'>('medium')
+const newTitle = ref<string>('');
+const newDescription = ref<string>('');
+const newPriority = ref<'low' | 'medium' | 'high'>('medium');
 
-const { pagedItems, currentPage, totalPages, next, prev } = usePagination(tasks, 5)
+const { pagedItems, currentPage, totalPages, next, prev } = usePagination(tasks, 5);
 
-const isDeleteModalOpen = ref<boolean>(false)
-const taskToDelete = ref<Task | null>(null)
+const isDeleteModalOpen = ref<boolean>(false);
+const taskToDelete = ref<Task | null>(null);
 
 const isFormValid = computed<boolean>(() => {
-  return newTitle.value.trim().length >= 3
-})
+  return newTitle.value.trim().length >= 3;
+});
 
 const isGlobalLoading = computed(
-  () => isFetchLoading.value || isCreateLoading.value || isActionLoading.value,
-)
+  () => isFetchLoading.value || isCreateLoading.value || isActionLoading.value
+);
 
 async function loadTasks(): Promise<void> {
-  const data = await fetchExecute({ method: 'GET', url: 'tasks/' })
+  const data = await fetchExecute({ method: 'GET', url: 'tasks/' });
   if (data) {
-    tasks.value = data
+    tasks.value = data;
   }
 }
 
 async function handleCreateTask(): Promise<void> {
-  if (!isFormValid.value || isGlobalLoading.value) return
+  if (!isFormValid.value || isGlobalLoading.value) return;
 
   const result = await createExecute({
     method: 'POST',
@@ -53,16 +53,16 @@ async function handleCreateTask(): Promise<void> {
       title: newTitle.value.trim(),
       description: newDescription.value.trim(),
       priority: newPriority.value,
-      completed: false,
-    },
-  })
+      completed: false
+    }
+  });
 
   if (result) {
-    tasks.value.unshift(result)
-    newTitle.value = ''
-    newDescription.value = ''
-    newPriority.value = 'medium'
-    currentPage.value = 1
+    tasks.value.unshift(result);
+    newTitle.value = '';
+    newDescription.value = '';
+    newPriority.value = 'medium';
+    currentPage.value = 1;
   }
 }
 
@@ -70,87 +70,87 @@ async function handleToggleCompleted(id: number, fields: Partial<Task>): Promise
   await actionExecute({
     method: 'PATCH',
     url: `tasks/${id}/`,
-    data: fields,
-  })
+    data: fields
+  });
 
   if (actionError.value) {
-    const taskIndex = tasks.value.findIndex((t) => t.id === id)
+    const taskIndex = tasks.value.findIndex((t) => t.id === id);
 
-    const targetTask = tasks.value[taskIndex]
+    const targetTask = tasks.value[taskIndex];
 
     if (targetTask && fields.completed !== undefined) {
-      targetTask.completed = !fields.completed
+      targetTask.completed = !fields.completed;
     }
 
-    alert(`Failed to update task status: ${actionError.value}`)
+    alert(`Failed to update task status: ${actionError.value}`);
   }
 }
 
 function handleDeleteTask(id: number): void {
-  const foundTask = tasks.value.find((t) => t.id === id)
+  const foundTask = tasks.value.find((t) => t.id === id);
   if (foundTask) {
-    taskToDelete.value = foundTask
-    isDeleteModalOpen.value = true
+    taskToDelete.value = foundTask;
+    isDeleteModalOpen.value = true;
   }
 }
 
 async function confirmDeleteTask(): Promise<void> {
-  if (!taskToDelete.value) return
+  if (!taskToDelete.value) return;
 
-  const targetId = taskToDelete.value.id
+  const targetId = taskToDelete.value.id;
 
   await actionExecute({
     method: 'DELETE',
-    url: `tasks/${targetId}/`,
-  })
+    url: `tasks/${targetId}/`
+  });
 
   if (!actionError.value) {
-    tasks.value = tasks.value.filter((t) => t.id !== targetId)
-    closeDeleteModal()
+    tasks.value = tasks.value.filter((t) => t.id !== targetId);
+    closeDeleteModal();
   } else {
-    alert(`Delete error: ${actionError.value}`)
+    alert(`Delete error: ${actionError.value}`);
   }
 }
 
 function closeDeleteModal(): void {
-  isDeleteModalOpen.value = false
-  taskToDelete.value = null
+  isDeleteModalOpen.value = false;
+  taskToDelete.value = null;
 }
 
 async function bulkAction(
-  actionName: 'toggle_all' | 'clear_completed' | 'clear_all',
+  actionName: 'toggle_all' | 'clear_completed' | 'clear_all'
 ): Promise<void> {
   if (actionName === 'toggle_all') {
-    const areAllCompleted = tasks.value.every((t) => t.completed)
-    const newStatus = !areAllCompleted
+    const areAllCompleted = tasks.value.every((t) => t.completed);
+    const newStatus = !areAllCompleted;
 
     const promises = tasks.value.map((t) =>
-      actionExecute({ method: 'PATCH', url: `tasks/${t.id}/`, data: { completed: newStatus } }),
-    )
+      actionExecute({ method: 'PATCH', url: `tasks/${t.id}/`, data: { completed: newStatus } })
+    );
 
-    await Promise.all(promises)
-    await loadTasks()
+    await Promise.all(promises);
+    await loadTasks();
   } else if (actionName === 'clear_completed') {
-    const completedTasks = tasks.value.filter((t) => t.completed)
+    const completedTasks = tasks.value.filter((t) => t.completed);
     const promises = completedTasks.map((t) =>
-      actionExecute({ method: 'DELETE', url: `tasks/${t.id}/` }),
-    )
+      actionExecute({ method: 'DELETE', url: `tasks/${t.id}/` })
+    );
 
-    await Promise.all(promises)
-    await loadTasks()
+    await Promise.all(promises);
+    await loadTasks();
   } else if (actionName === 'clear_all') {
     const promises = tasks.value.map((t) =>
-      actionExecute({ method: 'DELETE', url: `tasks/${t.id}/` }),
-    )
+      actionExecute({ method: 'DELETE', url: `tasks/${t.id}/` })
+    );
 
-    await Promise.all(promises)
-    await loadTasks()
+    await Promise.all(promises);
+    await loadTasks();
   }
 }
 
 onMounted(() => {
-  loadTasks()
-})
+  loadTasks();
+});
 </script>
 
 <template>

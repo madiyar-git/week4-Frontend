@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import BaseInput from '@/components/base/BaseInput.vue'
+import { ref } from 'vue';
+import BaseInput from '@/components/base/BaseInput.vue';
 
-const textValue = ref('')
-const passwordValue = ref('')
-const emailValue = ref('')
-const errorValue = ref('Invalid email format')
-const helperValue = ref('Password must contain at least 8 characters')
+const textValue = ref('');
+const passwordValue = ref('');
+const emailValue = ref('');
+const errorValue = ref('Invalid email format');
+const helperValue = ref('Password must contain at least 8 characters');
 </script>
 
 <template>

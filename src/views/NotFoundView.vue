@@ -15,7 +15,7 @@ h1 {
   color: #f83538;
   font-size: 2rem;
   margin-bottom: 16px;
-  background-color: #121212 ;
+  background-color: #121212;
 }
 p {
   color: #b3b3b3;

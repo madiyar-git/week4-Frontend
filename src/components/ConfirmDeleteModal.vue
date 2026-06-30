@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import BaseModal from '@/components/base/BaseModal.vue'
-import BaseButton from '@/components/base/BaseButton.vue'
+import BaseModal from '@/components/base/BaseModal.vue';
+import BaseButton from '@/components/base/BaseButton.vue';
 
 interface Props {
-  open: boolean
-  taskTitle: string
-  loading?: boolean
+  open: boolean;
+  taskTitle: string;
+  loading?: boolean;
 }
 
-defineProps<Props>()
+defineProps<Props>();
 
 const emit = defineEmits<{
-  close: []
-  confirm: []
-}>()
+  close: [];
+  confirm: [];
+}>();
 </script>
 
 <template>

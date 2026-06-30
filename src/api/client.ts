@@ -1,97 +1,97 @@
-import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios'
+import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
-  timeout: 5000,
-})
+  timeout: 5000
+});
 //XXX Перехватывает запрос и устанавливает access токен, чтобы сервер понимал от кого прилетел запрос
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('access_token')
+  const token = localStorage.getItem('access_token');
   if (token && config.headers) {
-    config.headers.Authorization = `Bearer ${token}`
+    config.headers.Authorization = `Bearer ${token}`;
   }
-  return config
-})
+  return config;
+});
 
 interface QueueItem {
-  resolve: () => void
-  reject: (error: unknown) => void
+  resolve: () => void;
+  reject: (error: unknown) => void;
 }
 
-let isRefreshing = false
-let queue: QueueItem[] = [] //XXX Массив для застрявших запросов
+let isRefreshing = false;
+let queue: QueueItem[] = []; //XXX Массив для застрявших запросов
 
 const processQueue = (error: unknown | null = null): void => {
   queue.forEach((item) => {
     if (error) {
-      item.reject(error)
+      item.reject(error);
     } else {
-      item.resolve()
+      item.resolve();
     }
-  })
-  queue = []
-}
+  });
+  queue = [];
+};
 
 //XXX Перехватчик ответов из сервера
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
     if (!error.response || error.response.status !== 401 || originalRequest?._retry) {
-      return Promise.reject(error)
+      return Promise.reject(error);
     }
 
     if (originalRequest.url?.includes('token/')) {
-      return Promise.reject(error)
+      return Promise.reject(error);
     }
 
-    originalRequest._retry = true
+    originalRequest._retry = true;
 
     if (isRefreshing) {
       try {
         await new Promise<void>((resolve, reject) => {
-          queue.push({ resolve, reject })
-        })
-        const token = localStorage.getItem('access_token')
+          queue.push({ resolve, reject });
+        });
+        const token = localStorage.getItem('access_token');
         if (token && originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${token}`
+          originalRequest.headers.Authorization = `Bearer ${token}`;
         }
-        return api(originalRequest)
+        return api(originalRequest);
       } catch (err) {
-        return Promise.reject(err)
+        return Promise.reject(err);
       }
     }
 
-    isRefreshing = true
+    isRefreshing = true;
 
     try {
-      const refresh = localStorage.getItem('refresh_token')
+      const refresh = localStorage.getItem('refresh_token');
       if (!refresh) {
-        throw new Error('No refresh token available.')
+        throw new Error('No refresh token available.');
       }
       interface RefreshResponse {
-        access: string
+        access: string;
       }
       const { data } = await axios.post<RefreshResponse>(
         'http://127.0.0.1:8000/api/token/refresh/',
-        { refresh },
-      )
-      localStorage.setItem('access_token', data.access)
+        { refresh }
+      );
+      localStorage.setItem('access_token', data.access);
       //XXX Берется новый access токен и вмонтируется в заголовок
       if (originalRequest.headers) {
-        originalRequest.headers.Authorization = `Bearer ${data.access}`
+        originalRequest.headers.Authorization = `Bearer ${data.access}`;
       }
 
-      processQueue()
-      return api(originalRequest)
+      processQueue();
+      return api(originalRequest);
     } catch (refreshError) {
-      processQueue(refreshError)
-      localStorage.clear()
-      window.location.href = '/login'
-      return Promise.reject(refreshError)
+      processQueue(refreshError);
+      localStorage.clear();
+      window.location.href = '/login';
+      return Promise.reject(refreshError);
     } finally {
-      isRefreshing = false
+      isRefreshing = false;
     }
-  },
-)
+  }
+);

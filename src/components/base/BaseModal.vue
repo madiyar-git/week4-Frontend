@@ -1,49 +1,49 @@
 <script setup lang="ts">
-import { watch, onMounted, onUnmounted } from 'vue'
+import { watch, onMounted, onUnmounted } from 'vue';
 
 interface Props {
-  open: boolean
-  title?: string
-  closeOnBackdrop?: boolean
-  closeOnEsc?: boolean
+  open: boolean;
+  title?: string;
+  closeOnBackdrop?: boolean;
+  closeOnEsc?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   title: '',
   closeOnBackdrop: true,
-  closeOnEsc: true,
-})
+  closeOnEsc: true
+});
 
 const emit = defineEmits<{
-  close: []
-}>()
+  close: [];
+}>();
 
 const handleKeyDown = (event: KeyboardEvent) => {
   if (props.closeOnEsc && event.key === 'Escape' && props.open) {
-    emit('close')
+    emit('close');
   }
-}
+};
 
 watch(
   () => props.open,
   (isOpen) => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden'
+      document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = ''
+      document.body.style.overflow = '';
     }
   },
-  { immediate: true },
-)
+  { immediate: true }
+);
 
 onMounted(() => {
-  window.addEventListener('keydown', handleKeyDown)
-})
+  window.addEventListener('keydown', handleKeyDown);
+});
 
 onUnmounted(() => {
-  window.removeEventListener('keydown', handleKeyDown)
-  document.body.style.overflow = ''
-})
+  window.removeEventListener('keydown', handleKeyDown);
+  document.body.style.overflow = '';
+});
 </script>
 
 <template>

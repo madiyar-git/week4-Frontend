@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed } from 'vue';
 
 interface Props {
-  variant?: 'primary' | 'secondary' | 'danger'
-  size?: 'sm' | 'md' | 'lg'
-  type?: 'button' | 'reset' | 'submit'
-  loading?: boolean
-  disabled?: boolean
+  variant?: 'primary' | 'secondary' | 'danger';
+  size?: 'sm' | 'md' | 'lg';
+  type?: 'button' | 'reset' | 'submit';
+  loading?: boolean;
+  disabled?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -14,17 +14,17 @@ const props = withDefaults(defineProps<Props>(), {
   size: 'sm',
   type: 'button',
   loading: false,
-  disabled: false,
-})
+  disabled: false
+});
 
 const buttonClasses = computed(() => {
   return [
     'base-button',
     `base-button--${props.variant}`,
     `base-button--${props.size}`,
-    { 'base-button--loading': props.loading },
-  ]
-})
+    { 'base-button--loading': props.loading }
+  ];
+});
 </script>
 
 <template>

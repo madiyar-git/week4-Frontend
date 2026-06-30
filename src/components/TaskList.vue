@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { Task } from '../types/task'
-import BaseButton from '@/components/base/BaseButton.vue'
-import TaskCard from './TaskCard.vue'
+import { computed } from 'vue';
+import type { Task } from '../types/task';
+import BaseButton from '@/components/base/BaseButton.vue';
+import TaskCard from './TaskCard.vue';
 
-const tasks = defineModel<Task[]>({ required: true })
+const tasks = defineModel<Task[]>({ required: true });
 
 defineEmits<{
-  delete: [TaskId: number]
-  update: [taskId: number, fields: Partial<Task>]
-  'bulk-action': [action: 'toggle_all' | 'clear_completed' | 'clear_all']
-}>()
+  delete: [TaskId: number];
+  update: [taskId: number, fields: Partial<Task>];
+  'bulk-action': [action: 'toggle_all' | 'clear_completed' | 'clear_all'];
+}>();
 
 const completedCount = computed(() => {
-  return tasks.value.filter((t) => t.completed).length
-})
+  return tasks.value.filter((t) => t.completed).length;
+});
 </script>
 
 <template>

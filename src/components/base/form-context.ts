@@ -1,8 +1,8 @@
-import type { InjectionKey, ComputedRef } from 'vue'
+import type { InjectionKey, ComputedRef } from 'vue';
 
 export interface FormContext {
-  errors: ComputedRef<Record<string, string | string[] | undefined | null>>
-  isSubmitting: ComputedRef<boolean>
+  errors: ComputedRef<Record<string, string | string[] | undefined | null>>;
+  isSubmitting: ComputedRef<boolean>;
 }
 
-export const formContextKey: InjectionKey<FormContext> = Symbol('FormContext') //[x] изучить почему я так объявляю ключ
+export const formContextKey: InjectionKey<FormContext> = Symbol('FormContext'); //[x] изучить почему я так объявляю ключ
