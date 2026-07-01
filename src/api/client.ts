@@ -13,6 +13,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// const brokenVariable= = 'CORS-is-pain'; // BUG спец ошибка для проверки
 interface QueueItem {
   resolve: () => void;
   reject: (error: unknown) => void;
