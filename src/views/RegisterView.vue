@@ -65,7 +65,8 @@ async function handleSubmit() {
     url: 'register/',
     data: {
       username: username.value,
-      password: password.value
+      password: password.value,
+      confirm_password: password_confirm.value
     }
   });
 

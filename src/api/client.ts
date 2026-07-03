@@ -74,10 +74,7 @@ api.interceptors.response.use(
       interface RefreshResponse {
         access: string;
       }
-      const { data } = await axios.post<RefreshResponse>(
-        'http://127.0.0.1:8000/api/token/refresh/',
-        { refresh }
-      );
+      const { data } = await axios.post<RefreshResponse>('/api/token/refresh/', { refresh });
       localStorage.setItem('access_token', data.access);
       //XXX Берется новый access токен и вмонтируется в заголовок
       if (originalRequest.headers) {
