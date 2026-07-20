@@ -11,6 +11,24 @@ import TaskList from '../components/TaskList.vue';
 import { usePagination } from '@/composables/usePagination';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal.vue';
 import { useSaveInClipBoard } from '@/composables/useSaveInClipBoard.ts';
+import { useForm, type Errors } from '@/composables/useForm.ts';
+
+interface TaskFormFields {
+  title: string;
+  description: string;
+  priority: 'low' | 'medium' | 'high';
+}
+
+const validateTaskForm = (values: TaskFormFields): Errors<TaskFormFields> => {
+  const errors: Errors<TaskFormFields> = {};
+
+  if (!values.title.trim()) {
+    errors.title = 'Title is required';
+  } else if (values.title.trim().length < 3) {
+    errors.title = 'Title must be at least 3 symbols ';
+  }
+  return errors;
+};
 
 const tasksStore = useTaskStore();
 const { tasks } = storeToRefs(tasksStore);
@@ -19,26 +37,31 @@ const { loading: isFetchLoading, error: fetchError, execute: fetchExecute } = us
 const { loading: isCreateLoading, error: createError, execute: createExecute } = useApi<Task>();
 const { loading: isActionLoading, error: actionError, execute: actionExecute } = useApi<unknown>();
 
-// const searchInput = defineModel<string>('');
+// TODO const searchInput = defineModel<string>('');
 
-const newTitle = ref<string>('');
-const newDescription = ref<string>('');
-const newPriority = ref<'low' | 'medium' | 'high'>('medium');
+const { values, errors, handleSubmit, reset } = useForm<TaskFormFields>(
+  {
+    title: '',
+    description: '',
+    priority: 'medium'
+  },
+  validateTaskForm
+);
+const getErrorString = (err: string | string[] | null | undefined): string | undefined => {
+  if (!err) return undefined;
+  return Array.isArray(err) ? err[0] : err;
+};
 
 const { pagedItems, currentPage, totalPages, next, prev } = usePagination(tasks, 5);
 
 const isDeleteModalOpen = ref<boolean>(false);
 const taskToDelete = ref<Task | null>(null);
 
-const isFormValid = computed<boolean>(() => {
-  return newTitle.value.trim().length >= 3;
-});
-
 const isGlobalLoading = computed(
   () => isFetchLoading.value || isCreateLoading.value || isActionLoading.value
 );
 
-// const filteredTasks = computed<string>(() => {
+//TODO const filteredTasks = computed<string>(() => {
 
 // })
 
@@ -49,35 +72,32 @@ async function loadTasks(): Promise<void> {
   }
 }
 
-// async function searchingTasks(searchInput: string) {
+//TODO async function searchingTasks(searchInput: string) {
 //   const data = await actionExecute({ method: 'GET', url: 'tasks/'});
 //   if (data) {
 //     const filteredTasks = computed
 //   }
 // }
 
-async function handleCreateTask(): Promise<void> {
-  if (!isFormValid.value || isGlobalLoading.value) return;
-
+const onSubmit = handleSubmit(async (fromData) => {
+  if (isGlobalLoading.value) return;
   const result = await createExecute({
     method: 'POST',
     url: 'tasks/',
     data: {
-      title: newTitle.value.trim(),
-      description: newDescription.value.trim(),
-      priority: newPriority.value,
+      title: fromData.title,
+      description: fromData.description,
+      priority: fromData.priority,
       completed: false
     }
   });
 
   if (result) {
     tasks.value.unshift(result);
-    newTitle.value = '';
-    newDescription.value = '';
-    newPriority.value = 'medium';
+    reset();
     currentPage.value = 1;
   }
-}
+});
 
 async function handleToggleCompleted(id: number, fields: Partial<Task>): Promise<void> {
   await actionExecute({
@@ -176,22 +196,22 @@ onMounted(() => {
             <h3>New Task</h3>
           </template>
 
-          <form @submit.prevent="handleCreateTask" class="create-task-form">
+          <form @submit.prevent="onSubmit" class="create-task-form">
             <div class="form-group">
               <BaseInput
-                v-model="newTitle"
+                v-model="values.title"
                 type="text"
                 label="Title"
                 placeholder="Task title (min 3 symbols)..."
                 :disabled="isGlobalLoading"
-                :error="createError || undefined"
+                :error="getErrorString(errors.title) || createError || undefined"
                 required
               />
             </div>
 
             <div class="form-group">
               <BaseInput
-                v-model="newDescription"
+                v-model="values.description"
                 label="Description"
                 placeholder="Description (optional)..."
                 :disabled="isGlobalLoading"
@@ -202,8 +222,8 @@ onMounted(() => {
               <label for="priority">Priority</label>
               <select
                 id="priority"
-                v-model="newPriority"
-                :class="newPriority"
+                v-model="values.priority"
+                :class="values.priority"
                 :disabled="isGlobalLoading"
               >
                 <option value="low">Low</option>
@@ -216,7 +236,7 @@ onMounted(() => {
               type="submit"
               variant="primary"
               size="lg"
-              :disabled="!isFormValid || isGlobalLoading"
+              :disabled="isGlobalLoading"
               :loading="isCreateLoading"
               style="width: 100%; margin-top: 12px"
             >

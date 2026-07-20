@@ -2,11 +2,10 @@ import { computed, ref } from 'vue';
 
 export type form_status = 'idle' | 'loading' | 'success' | 'error';
 export type Errors<T> = {
-  [K in keyof T]?: string | string[] | null;
+  [K in keyof T]?: string | string[] | null | undefined;
 };
 
 export function useForm<T extends object>(initial: T, validate: (values: T) => Errors<T>) {
-  // [ ] values, errors, isSubmitting, handleSubmit, reset
   const values = ref<T>({ ...initial });
   const errors = ref<Errors<T>>({});
   const submit_status = ref<form_status>('idle');
@@ -17,7 +16,7 @@ export function useForm<T extends object>(initial: T, validate: (values: T) => E
     errors.value = {};
     submit_status.value = 'idle';
   };
-  async function handleSubmit(onValid: (values: T) => Promise<void> | void) {
+  const handleSubmit = (onValid: (values: T) => Promise<void> | void) => {
     return async (event?: Event) => {
       if (event?.preventDefault) event.preventDefault();
 
@@ -48,6 +47,6 @@ export function useForm<T extends object>(initial: T, validate: (values: T) => E
         submit_status.value = 'error';
       }
     };
-  }
+  };
   return { reset, values, errors, isSubmitting, handleSubmit };
 }
