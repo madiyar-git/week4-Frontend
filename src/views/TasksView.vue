@@ -19,6 +19,8 @@ const { loading: isFetchLoading, error: fetchError, execute: fetchExecute } = us
 const { loading: isCreateLoading, error: createError, execute: createExecute } = useApi<Task>();
 const { loading: isActionLoading, error: actionError, execute: actionExecute } = useApi<unknown>();
 
+// const searchInput = defineModel<string>('');
+
 const newTitle = ref<string>('');
 const newDescription = ref<string>('');
 const newPriority = ref<'low' | 'medium' | 'high'>('medium');
@@ -36,12 +38,23 @@ const isGlobalLoading = computed(
   () => isFetchLoading.value || isCreateLoading.value || isActionLoading.value
 );
 
+// const filteredTasks = computed<string>(() => {
+
+// })
+
 async function loadTasks(): Promise<void> {
   const data = await fetchExecute({ method: 'GET', url: 'tasks/' });
   if (data) {
     tasks.value = data;
   }
 }
+
+// async function searchingTasks(searchInput: string) {
+//   const data = await actionExecute({ method: 'GET', url: 'tasks/'});
+//   if (data) {
+//     const filteredTasks = computed
+//   }
+// }
 
 async function handleCreateTask(): Promise<void> {
   if (!isFormValid.value || isGlobalLoading.value) return;
@@ -213,7 +226,12 @@ onMounted(() => {
         </BaseCard>
 
         <hr class="divider" />
-
+        <!-- <BaseInput
+          v-model="searchInput"
+          type="text"
+          placeholder="Search"
+          @keyup.enter="searchingTasks"
+        /> -->
         <div v-if="isFetchLoading" class="spinner-container">
           <div class="spinner"></div>
           <p>Loading tasks from server...</p>
@@ -235,6 +253,7 @@ onMounted(() => {
         <p v-if="!isFetchLoading && tasks.length === 0" class="empty-text">
           No tasks found. Create your first task!
         </p>
+
         <TaskList
           v-else-if="tasks.length > 0"
           v-model="pagedItems"

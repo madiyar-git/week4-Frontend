@@ -39,5 +39,6 @@ __screenshots__/
 *.timestamp-*-*.mjs
 
 .env.local
+.env
 
 /dist

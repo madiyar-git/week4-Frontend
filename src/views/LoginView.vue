@@ -3,6 +3,7 @@ import { useAuthStore } from '@/stores/auth';
 import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useApi } from '@/composables/useApi';
+// import { useApi } from 'C:/Users/user/Desktop/week3/vue-project/src/composables/useApi';
 import BaseButton from '@/components/base/BaseButton.vue';
 import BaseInput from '@/components/base/BaseInput.vue';
 import BaseCard from '@/components/base/BaseCard.vue';
