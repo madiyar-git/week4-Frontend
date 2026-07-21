@@ -8,6 +8,7 @@ import BaseButton from '@/components/base/BaseButton.vue';
 import BaseInput from '@/components/base/BaseInput.vue';
 import BaseCard from '@/components/base/BaseCard.vue';
 import BaseForm from '@/components/base/BaseForm.vue';
+import { apiResponse } from '@/api/client';
 
 const router = useRouter();
 const route = useRoute();
@@ -42,14 +43,16 @@ const isFormValid = computed<boolean>(() => {
 async function handleSubmit() {
   if (!isFormValid.value || isLoading.value) return;
 
-  const result = await execute({
-    method: 'POST',
-    url: 'token/',
-    data: {
-      username: username.value,
-      password: password.value
-    }
-  });
+  const result = await execute(() =>
+    apiResponse<LoginResponse>({
+      method: 'POST',
+      url: 'token/',
+      data: {
+        username: username.value,
+        password: password.value
+      }
+    })
+  );
 
   if (result && result.access && result.refresh) {
     auth.login(username.value, result.access, result.refresh);

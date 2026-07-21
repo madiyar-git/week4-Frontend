@@ -1,10 +1,22 @@
-import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosError, type AxiosRequestConfig, type InternalAxiosRequestConfig } from 'axios';
+
+export interface ApiResponse<T> {
+  data: T;
+  status: number;
+}
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   timeout: 5000
 });
 //XXX Перехватывает запрос и устанавливает access токен, чтобы сервер понимал от кого прилетел запрос
+
+export async function apiResponse<T>(config: AxiosRequestConfig): Promise<T> {
+  const response: ApiResponse<T> = await api(config);
+
+  return response.data;
+}
+
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('access_token');
   if (token && config.headers) {
@@ -13,7 +25,6 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// const brokenVariable= = 'CORS-is-pain'; // BUG спец ошибка для проверки
 interface QueueItem {
   resolve: () => void;
   reject: (error: unknown) => void;
@@ -40,6 +51,15 @@ api.interceptors.response.use(
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
     if (!error.response || error.response.status !== 401 || originalRequest?._retry) {
+      return Promise.reject(error);
+    }
+
+    const isAuthEndpoint =
+      originalRequest.url?.includes('token') ||
+      originalRequest.url?.includes('login') ||
+      originalRequest.url?.includes('auth');
+
+    if (isAuthEndpoint) {
       return Promise.reject(error);
     }
 
@@ -74,7 +94,7 @@ api.interceptors.response.use(
       interface RefreshResponse {
         access: string;
       }
-      const { data } = await axios.post<RefreshResponse>('/api/token/refresh/', { refresh });
+      const { data } = await api.post<RefreshResponse>('/api/token/refresh/', { refresh });
       localStorage.setItem('access_token', data.access);
       //XXX Берется новый access токен и вмонтируется в заголовок
       if (originalRequest.headers) {

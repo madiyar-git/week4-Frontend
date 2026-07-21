@@ -12,6 +12,7 @@ import { usePagination } from '@/composables/usePagination';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal.vue';
 import { useSaveInClipBoard } from '@/composables/useSaveInClipBoard.ts';
 import { useForm, type Errors } from '@/composables/useForm.ts';
+import { taskApi } from '@/api/tasks.ts';
 
 interface TaskFormFields {
   title: string;
@@ -66,7 +67,7 @@ const isGlobalLoading = computed(
 // })
 
 async function loadTasks(): Promise<void> {
-  const data = await fetchExecute({ method: 'GET', url: 'tasks/' });
+  const data = await fetchExecute(() => taskApi.getAll());
   if (data) {
     tasks.value = data;
   }
@@ -81,16 +82,13 @@ async function loadTasks(): Promise<void> {
 
 const onSubmit = handleSubmit(async (fromData) => {
   if (isGlobalLoading.value) return;
-  const result = await createExecute({
-    method: 'POST',
-    url: 'tasks/',
-    data: {
-      title: fromData.title,
-      description: fromData.description,
-      priority: fromData.priority,
-      completed: false
-    }
-  });
+  const result = await createExecute(() =>
+    taskApi.create({
+      title: fromData.title.trim(),
+      description: fromData.description.trim(),
+      priority: fromData.priority
+    })
+  );
 
   if (result) {
     tasks.value.unshift(result);
@@ -100,11 +98,7 @@ const onSubmit = handleSubmit(async (fromData) => {
 });
 
 async function handleToggleCompleted(id: number, fields: Partial<Task>): Promise<void> {
-  await actionExecute({
-    method: 'PATCH',
-    url: `tasks/${id}/`,
-    data: fields
-  });
+  await actionExecute(() => taskApi.update(id, fields));
 
   if (actionError.value) {
     const taskIndex = tasks.value.findIndex((t) => t.id === id);
@@ -132,10 +126,7 @@ async function confirmDeleteTask(): Promise<void> {
 
   const targetId = taskToDelete.value.id;
 
-  await actionExecute({
-    method: 'DELETE',
-    url: `tasks/${targetId}/`
-  });
+  await actionExecute(() => taskApi.delete(targetId));
 
   if (!actionError.value) {
     tasks.value = tasks.value.filter((t) => t.id !== targetId);
@@ -158,23 +149,19 @@ async function bulkAction(
     const newStatus = !areAllCompleted;
 
     const promises = tasks.value.map((t) =>
-      actionExecute({ method: 'PATCH', url: `tasks/${t.id}/`, data: { completed: newStatus } })
+      actionExecute(() => taskApi.update(t.id, { completed: newStatus }))
     );
 
     await Promise.all(promises);
     await loadTasks();
   } else if (actionName === 'clear_completed') {
     const completedTasks = tasks.value.filter((t) => t.completed);
-    const promises = completedTasks.map((t) =>
-      actionExecute({ method: 'DELETE', url: `tasks/${t.id}/` })
-    );
+    const promises = completedTasks.map((t) => actionExecute(() => taskApi.delete(t.id)));
 
     await Promise.all(promises);
     await loadTasks();
   } else if (actionName === 'clear_all') {
-    const promises = tasks.value.map((t) =>
-      actionExecute({ method: 'DELETE', url: `tasks/${t.id}/` })
-    );
+    const promises = tasks.value.map((t) => actionExecute(() => taskApi.delete(t.id)));
 
     await Promise.all(promises);
     await loadTasks();

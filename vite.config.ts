@@ -8,8 +8,6 @@ import { visualizer } from 'rollup-plugin-visualizer';
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
-  const devTarget = env.DEV_TARGET_URL;
-  const prodTarget = env.PROD_TARGET_URL;
   return {
     plugins: [
       vue(),
@@ -29,13 +27,13 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 5173,
       proxy: {
-        '/api': { target: devTarget, changeOrigin: true }
+        '/api': { target: env.TARGET_URL, changeOrigin: true }
       }
     },
     preview: {
       port: 4173,
       proxy: {
-        '/api': { target: prodTarget, changeOrigin: true }
+        '/api': { target: env.TARGET_URL, changeOrigin: true }
       }
     }
   };

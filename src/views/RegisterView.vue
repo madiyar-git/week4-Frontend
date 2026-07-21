@@ -5,6 +5,7 @@ import { useApi } from '@/composables/useApi';
 import BaseButton from '@/components/base/BaseButton.vue';
 import BaseInput from '@/components/base/BaseInput.vue';
 import BaseCard from '@/components/base/BaseCard.vue';
+import { apiResponse } from '@/api/client';
 
 interface RegisterResponse {
   id: number;
@@ -60,15 +61,17 @@ const isFormValid = computed<boolean>(() => {
 async function handleSubmit() {
   if (!isFormValid.value || isLoading.value) return;
 
-  const result = await execute({
-    method: 'POST',
-    url: 'register/',
-    data: {
-      username: username.value,
-      password: password.value,
-      confirm_password: password_confirm.value
-    }
-  });
+  const result = await execute(() =>
+    apiResponse<RegisterResponse>({
+      method: 'POST',
+      url: 'register/',
+      data: {
+        username: username.value,
+        password: password.value,
+        confirm_password: password_confirm.value
+      }
+    })
+  );
 
   if (result) {
     router.push({

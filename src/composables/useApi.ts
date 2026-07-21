@@ -1,6 +1,5 @@
 import { ref, type Ref } from 'vue';
-import { api } from '@/api/client';
-import axios, { AxiosError, type AxiosRequestConfig } from 'axios';
+import axios, { AxiosError } from 'axios';
 
 interface ApiErrorStructure {
   detail?: string;
@@ -17,14 +16,14 @@ export function useApi<T>() {
     error.value = null;
   };
 
-  const execute = async (config: AxiosRequestConfig): Promise<T | null> => {
+  const execute = async (apiCall: () => Promise<T>): Promise<T | null> => {
     loading.value = true;
     error.value = null;
 
     try {
-      const response = await api<T>(config);
-      data.value = response.data;
-      return response.data;
+      const result = await apiCall();
+      data.value = result;
+      return result;
     } catch (e: unknown) {
       if (axios.isAxiosError(e)) {
         const axiosError = e as AxiosError<ApiErrorStructure>;
