@@ -1,10 +1,26 @@
 import type { Task } from '@/types/task';
+import { type Result } from '@/types/result';
 import { api } from './client';
+import axios from 'axios';
 
 export const taskApi = {
-  getAll: async (): Promise<Task[]> => {
-    const result = await api<Task[]>({ method: 'GET', url: 'tasks/' });
-    return result.data;
+  getAll: async (): Promise<Result<Task[]>> => {
+    try {
+      const { data } = await api<Task[]>({ method: 'GET', url: 'tasks/' });
+      return { ok: true, data };
+    } catch (e: unknown) {
+      let errorMes = 'Failed to load tasks';
+
+      if (axios.isAxiosError(e)) {
+        errorMes = e.response?.data?.detail ?? e.message;
+      } else if (e instanceof Error) {
+        errorMes = e.message;
+      }
+      return {
+        ok: false,
+        error: errorMes
+      };
+    }
   },
 
   getById: async (id: number): Promise<Task> => {
