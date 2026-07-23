@@ -9,6 +9,7 @@ const tasks = defineModel<Task[]>({ required: true });
 defineEmits<{
   delete: [TaskId: number];
   update: [taskId: number, fields: Partial<Task>];
+  edit: [task: Task];
   'bulk-action': [action: 'toggle_all' | 'clear_completed' | 'clear_all'];
 }>();
 
@@ -58,6 +59,7 @@ const completedCount = computed(() => {
         :key="task.id"
         v-model="tasks[index]!"
         @delete="$emit('delete', $event)"
+        @edit="$emit('edit', $event)"
         @update="(id, fields) => $emit('update', id, fields)"
       />
     </div>

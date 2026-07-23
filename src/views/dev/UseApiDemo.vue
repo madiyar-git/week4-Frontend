@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
 import { useApi } from '@/composables/useApi';
+import { api } from '@/api/client';
 
 interface StatDetail {
   total_tasks: number;
@@ -16,7 +17,10 @@ interface StatsResponse {
 const { data: stats, loading, error, execute } = useApi<StatsResponse>();
 
 onMounted(() => {
-  execute({ method: 'GET', url: 'tasks/stats/' });
+  execute(async () => {
+    const response = await api.get<StatsResponse>('/tasks/stats/');
+    return response.data;
+  });
 });
 </script>
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref, computed, watch } from 'vue';
 import { useTaskStore } from '@/stores/tasks';
 import { storeToRefs } from 'pinia';
 import { useApi } from '@/composables/useApi';
@@ -13,6 +13,8 @@ import ConfirmDeleteModal from '../components/ConfirmDeleteModal.vue';
 import { useSaveInClipBoard } from '@/composables/useSaveInClipBoard.ts';
 import { useForm, type Errors } from '@/composables/useForm.ts';
 import { taskApi } from '@/api/tasks.ts';
+import { type Result, isError } from '@/types/result.ts';
+import EditTaskModal from '@/components/EditTaskModal.vue';
 
 interface TaskFormFields {
   title: string;
@@ -34,11 +36,58 @@ const validateTaskForm = (values: TaskFormFields): Errors<TaskFormFields> => {
 const tasksStore = useTaskStore();
 const { tasks } = storeToRefs(tasksStore);
 
-const { loading: isFetchLoading, error: fetchError, execute: fetchExecute } = useApi<Task[]>();
+const {
+  loading: isFetchLoading,
+  error: fetchError,
+  execute: fetchExecute
+} = useApi<Result<Task[]>>();
 const { loading: isCreateLoading, error: createError, execute: createExecute } = useApi<Task>();
 const { loading: isActionLoading, error: actionError, execute: actionExecute } = useApi<unknown>();
 
-// TODO const searchInput = defineModel<string>('');
+const searchInput = ref<string>('');
+
+const filteredTasks = computed(() => {
+  const query = searchInput.value.trim().toLowerCase();
+  if (!query) return tasks.value;
+
+  return tasks.value.filter((task) => task.title.toLowerCase().includes(query));
+});
+
+const { pagedItems, currentPage, totalPages, next, prev } = usePagination(filteredTasks, 5);
+
+watch(searchInput, () => {
+  currentPage.value = 1;
+});
+
+const isEditModalOpen = ref<boolean>(false);
+const taskToEdit = ref<Task | null>(null);
+
+function handleEditTask(task: Task): void {
+  taskToEdit.value = task;
+  isEditModalOpen.value = true;
+}
+
+async function confirmEditTask(payload: Partial<Task>): Promise<void> {
+  if (!taskToEdit.value) return;
+  const targetId = taskToEdit.value.id;
+
+  await actionExecute(() => taskApi.update(targetId, payload));
+
+  if (!actionError.value) {
+    const index = tasks.value.findIndex((t) => t.id === targetId);
+    if (index !== -1) {
+      tasks.value[index] = { ...tasks.value[index], ...payload } as Task;
+    }
+    closeEditModal();
+  } else {
+    alert(`Failed to update task: ${actionError.value}`);
+  }
+}
+
+function closeEditModal(): void {
+  isEditModalOpen.value = false;
+  taskToEdit.value = null;
+}
 
 const { values, errors, handleSubmit, reset } = useForm<TaskFormFields>(
   {
@@ -53,8 +102,6 @@ const getErrorString = (err: string | string[] | null | undefined): string | und
   return Array.isArray(err) ? err[0] : err;
 };
 
-const { pagedItems, currentPage, totalPages, next, prev } = usePagination(tasks, 5);
-
 const isDeleteModalOpen = ref<boolean>(false);
 const taskToDelete = ref<Task | null>(null);
 
@@ -62,23 +109,16 @@ const isGlobalLoading = computed(
   () => isFetchLoading.value || isCreateLoading.value || isActionLoading.value
 );
 
-//TODO const filteredTasks = computed<string>(() => {
-
-// })
-
 async function loadTasks(): Promise<void> {
-  const data = await fetchExecute(() => taskApi.getAll());
-  if (data) {
-    tasks.value = data;
+  const result = await fetchExecute(() => taskApi.getAll());
+  if (result) {
+    if (isError(result)) {
+      alert(result.error);
+    } else {
+      tasks.value = result.data;
+    }
   }
 }
-
-//TODO async function searchingTasks(searchInput: string) {
-//   const data = await actionExecute({ method: 'GET', url: 'tasks/'});
-//   if (data) {
-//     const filteredTasks = computed
-//   }
-// }
 
 const onSubmit = handleSubmit(async (fromData) => {
   if (isGlobalLoading.value) return;
@@ -233,12 +273,7 @@ onMounted(() => {
         </BaseCard>
 
         <hr class="divider" />
-        <!-- <BaseInput
-          v-model="searchInput"
-          type="text"
-          placeholder="Search"
-          @keyup.enter="searchingTasks"
-        /> -->
+        <BaseInput v-model="searchInput" type="text" placeholder="Search" />
         <div v-if="isFetchLoading" class="spinner-container">
           <div class="spinner"></div>
           <p>Loading tasks from server...</p>
@@ -265,8 +300,16 @@ onMounted(() => {
           v-else-if="tasks.length > 0"
           v-model="pagedItems"
           @delete="handleDeleteTask"
+          @edit="handleEditTask"
           @update="handleToggleCompleted"
           @bulk-action="bulkAction"
+        />
+        <EditTaskModal
+          :open="isEditModalOpen"
+          :task="taskToEdit"
+          :loading="isActionLoading"
+          @close="closeEditModal"
+          @submit="confirmEditTask"
         />
         <div class="pagination-controls">
           <BaseButton
@@ -386,21 +429,21 @@ select:disabled {
 }
 
 .low {
-  background-color: #1a2a3a;
-  color: #90cdf4;
-  border-color: #2b6cb0;
+  background-color: rgba(29, 185, 84, 0.12);
+  color: #1ed760;
+  border-color: rgba(29, 185, 84, 0.3);
 }
 
 .medium {
-  background-color: #3d2a1d;
-  color: #fbd38d;
-  border-color: #dd6b20;
+  background-color: rgba(255, 170, 0, 0.12);
+  color: #ffb703;
+  border-color: rgba(255, 170, 0, 0.3);
 }
 
 .high {
-  background-color: #3d1d24;
-  color: #feb2b2;
-  border-color: #e53e3e;
+  background-color: rgba(233, 20, 41, 0.15);
+  color: #ff4d5e;
+  border-color: rgba(233, 20, 41, 0.35);
 }
 
 select option {

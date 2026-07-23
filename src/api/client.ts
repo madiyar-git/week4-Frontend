@@ -9,7 +9,6 @@ export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   timeout: 5000
 });
-//XXX Перехватывает запрос и устанавливает access токен, чтобы сервер понимал от кого прилетел запрос
 
 export async function apiResponse<T>(config: AxiosRequestConfig): Promise<T> {
   const response: ApiResponse<T> = await api(config);
@@ -31,7 +30,7 @@ interface QueueItem {
 }
 
 let isRefreshing = false;
-let queue: QueueItem[] = []; //XXX Массив для застрявших запросов
+let queue: QueueItem[] = [];
 
 const processQueue = (error: unknown | null = null): void => {
   queue.forEach((item) => {
@@ -44,7 +43,6 @@ const processQueue = (error: unknown | null = null): void => {
   queue = [];
 };
 
-//XXX Перехватчик ответов из сервера
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
@@ -96,7 +94,7 @@ api.interceptors.response.use(
       }
       const { data } = await api.post<RefreshResponse>('/api/token/refresh/', { refresh });
       localStorage.setItem('access_token', data.access);
-      //XXX Берется новый access токен и вмонтируется в заголовок
+
       if (originalRequest.headers) {
         originalRequest.headers.Authorization = `Bearer ${data.access}`;
       }

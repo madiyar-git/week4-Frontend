@@ -185,7 +185,6 @@ const inputClasses = computed(() => {
   color: #a7a7a7;
 }
 
-/* Контейнер-строка для чекбокса и его лейбла */
 .base-input__checkbox-wrapper {
   display: flex;
   align-items: center;
@@ -195,9 +194,8 @@ const inputClasses = computed(() => {
   user-select: none;
 }
 
-/* Базовое состояние кастомного чекбокса */
 .base-input__checkbox {
-  appearance: none; /* Скрываем стандартный чекбокс */
+  appearance: none;
   -webkit-appearance: none;
 
   width: 20px;
@@ -214,50 +212,44 @@ const inputClasses = computed(() => {
     background-color 0.2s ease,
     border-color 0.2s ease,
     box-shadow 0.2s ease;
-  flex-shrink: 0; /* Чтобы чекбокс не сжимался, если текст длинный */
+  flex-shrink: 0;
 }
 
-/* Создаем галочку с помощью псевдоэлемента (рисуем её границами) */
 .base-input__checkbox::after {
   content: '';
   position: absolute;
   width: 5px;
   height: 10px;
-  border: solid #141414; /* Цвет галочки (темный для контраста с ярким фоном) */
+  border: solid #141414;
   border-width: 0 2px 2px 0;
-  transform: rotate(45deg) scale(0); /* Изначально галочка уменьшена до 0 */
+  transform: rotate(45deg) scale(0);
   opacity: 0;
   transition:
     transform 0.2s cubic-bezier(0.12, 0.4, 0.29, 1.46),
     opacity 0.1s ease;
-  margin-bottom: 2px; /* Микро-сдвиг для идеального центра */
+  margin-bottom: 2px;
 }
 
-/* Ховер на активном (не задизейбленном) чекбоксе */
 .base-input__checkbox:not(:disabled):hover {
   border-color: #b3b3b3;
 }
 
-/* Состояние: Чекбокс Выбран (Checked) */
 .base-input__checkbox:checked {
-  background-color: #80ffac; /* Твой фирменный светло-зеленый акцент */
+  background-color: #80ffac;
   border-color: #80ffac;
 }
 
-/* Показываем галочку при выборе */
 .base-input__checkbox:checked::after {
   opacity: 1;
-  transform: rotate(45deg) scale(1); /* Плавный эффект "вырастания" галочки */
+  transform: rotate(45deg) scale(1);
 }
 
-/* Фокус для доступности с клавиатуры */
 .base-input__checkbox:focus-visible {
   outline: none;
   border-color: #ffffff;
   box-shadow: 0 0 0 2px rgba(128, 255, 172, 0.3);
 }
 
-/* Состояние ошибки (Error) */
 .base-input__checkbox--error {
   border-color: #e91429 !important;
 }
@@ -266,7 +258,6 @@ const inputClasses = computed(() => {
   box-shadow: 0 0 0 2px rgba(233, 20, 41, 0.3);
 }
 
-/* Состояние заблокирован (Disabled) */
 .base-input__checkbox:disabled {
   background-color: #121212;
   border-color: #3e3e3e;
@@ -279,10 +270,9 @@ const inputClasses = computed(() => {
 }
 
 .base-input__checkbox:disabled:checked::after {
-  border-color: #727272; /* Делаем галочку блеклой */
+  border-color: #727272;
 }
 
-/* Лейбл, который стоит справа от чекбокса */
 .base-input__checkbox-label {
   color: #e0e0e0;
   font-size: 0.95rem;
@@ -291,7 +281,6 @@ const inputClasses = computed(() => {
   line-height: 1.2;
 }
 
-/* Если чекбокс заблокирован, делаем текст блеклым */
 .base-input__checkbox:disabled + .base-input__checkbox-label {
   color: #727272;
   cursor: not-allowed;

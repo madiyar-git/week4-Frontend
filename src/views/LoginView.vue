@@ -100,9 +100,6 @@ onMounted(() => {
           placeholder="Enter your password"
           autocomplete="current-password"
         />
-
-        <!-- <div v-if="error" class="error-message">Wrong username or password. Try Again.</div> -->
-
         <BaseButton
           type="submit"
           variant="primary"

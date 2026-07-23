@@ -4,32 +4,51 @@ import BaseButton from '@/components/base/BaseButton.vue';
 import BaseInput from '@/components/base/BaseInput.vue';
 import { ref } from 'vue';
 
-const isEditing = ref(false);
-const isEditingDesc = ref(false);
+const isEditing = ref<boolean>(false);
+const isEditingDesc = ref<boolean>(false);
 const task = defineModel<Task>({ required: true });
 
 const emit = defineEmits<{
   delete: [taskId: number];
   update: [taskId: number, fields: Partial<Task>];
+  edit: [task: Task];
 }>();
+
+function saveTitle() {
+  if (!isEditing.value) return;
+
+  isEditing.value = false;
+  const trimmed = task.value.title.trim();
+  const secondTitle = 'No name...';
+
+  const finalTitle = trimmed && trimmed !== '' ? trimmed : secondTitle;
+
+  task.value.title = finalTitle;
+  emit('update', task.value.id, { title: finalTitle });
+}
 </script>
 
 <template>
   <div class="task-card" :class="{ 'is-completed': task.completed }">
     <div class="task-header">
       <h3 v-if="!isEditing" @dblclick="isEditing = true" class="title">
-        {{ task.title && task.title.trim() !== '' ? task.title : 'No name...' }}
+        {{ task.title && task.title.trim() !== '' ? task.title : (task.title = 'No name...') }}
       </h3>
 
       <BaseInput
         v-else
         v-model="task.title"
-        placeholder="Enter your username"
-        @blur="((isEditing = false), $emit('update', task.id, { title: task.title }))"
-        @keyup.enter="((isEditing = false), $emit('update', task.id, { title: task.title }))"
+        placeholder="Enter task name"
+        @blur="saveTitle"
+        @keyup.enter="saveTitle"
+        required
       />
 
       <div class="buttons">
+        <BaseButton type="button" variant="primary" size="sm" @click="emit('edit', task)">
+          Edit
+        </BaseButton>
+
         <BaseInput
           type="checkbox"
           v-model="task.completed"
@@ -246,15 +265,26 @@ const emit = defineEmits<{
 }
 
 .low {
-  background-color: #2d3748;
-  color: #90cdf4;
+  background-color: rgba(29, 185, 84, 0.12);
+  color: #1ed760;
+  border-color: rgba(29, 185, 84, 0.3);
 }
+
 .medium {
-  background-color: #4a371c;
-  color: #fbd38d;
+  background-color: rgba(255, 170, 0, 0.12);
+  color: #ffb703;
+  border-color: rgba(255, 170, 0, 0.3);
 }
+
 .high {
-  background-color: #4a1d24;
-  color: #feb2b2;
+  background-color: rgba(233, 20, 41, 0.15);
+  color: #ff4d5e;
+  border-color: rgba(233, 20, 41, 0.35);
+}
+
+select.priority-badge option,
+select option {
+  background-color: #282828 !important;
+  color: #ffffff !important;
 }
 </style>
