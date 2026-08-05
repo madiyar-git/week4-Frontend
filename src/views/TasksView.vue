@@ -28,7 +28,7 @@ const validateTaskForm = (values: TaskFormFields): Errors<TaskFormFields> => {
   if (!values.title.trim()) {
     errors.title = 'Title is required';
   } else if (values.title.trim().length < 3) {
-    errors.title = 'Title must be at least 3 symbols ';
+    errors.title = 'Title must be at least 3 symbols';
   }
   return errors;
 };
@@ -110,7 +110,11 @@ const isGlobalLoading = computed(
 );
 
 async function loadTasks(): Promise<void> {
-  const result = await fetchExecute(() => taskApi.getAll());
+  const result = await fetchExecute(async () => {
+    const response = await taskApi.getAll();
+    return { ok: true, data: response.data };
+  });
+
   if (result) {
     if (isError(result)) {
       alert(result.error);
@@ -122,13 +126,14 @@ async function loadTasks(): Promise<void> {
 
 const onSubmit = handleSubmit(async (fromData) => {
   if (isGlobalLoading.value) return;
-  const result = await createExecute(() =>
-    taskApi.create({
+  const result = await createExecute(async () => {
+    const res = await taskApi.create({
       title: fromData.title.trim(),
       description: fromData.description.trim(),
       priority: fromData.priority
-    })
-  );
+    });
+    return res.data;
+  });
 
   if (result) {
     tasks.value.unshift(result);

@@ -16,6 +16,49 @@ export async function apiResponse<T>(config: AxiosRequestConfig): Promise<T> {
   return response.data;
 }
 
+export async function get<T>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  const response = await api.get<T>(url, config);
+  return {
+    data: response.data,
+    status: response.status
+  };
+}
+
+export async function post<T, D = unknown>(
+  url: string,
+  data?: D,
+  config?: AxiosRequestConfig
+): Promise<ApiResponse<T>> {
+  const response = await api.post<T>(url, data, config);
+  return {
+    data: response.data,
+    status: response.status
+  };
+}
+
+export async function patch<T, D = unknown>(
+  url: string,
+  data?: D,
+  config?: AxiosRequestConfig
+): Promise<ApiResponse<T>> {
+  const response = await api.patch<T>(url, data, config);
+  return {
+    data: response.data,
+    status: response.status
+  };
+}
+
+export async function del<T = void>(
+  url: string,
+  config?: AxiosRequestConfig
+): Promise<ApiResponse<T>> {
+  const response = await api.delete<T>(url, config);
+  return {
+    data: response.data,
+    status: response.status
+  };
+}
+
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('access_token');
   if (token && config.headers) {

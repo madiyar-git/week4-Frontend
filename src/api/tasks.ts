@@ -1,52 +1,27 @@
 import type { Task } from '@/types/task';
-import { type Result } from '@/types/result';
-import { api } from './client';
-import axios from 'axios';
+import { get, post, patch, del, type ApiResponse } from './client';
+
+export type CreateTaskDto = Omit<Task, 'id' | 'completed'>;
+export type UpdateTaskDto = Partial<Task>;
 
 export const taskApi = {
-  getAll: async (): Promise<Result<Task[]>> => {
-    try {
-      const { data } = await api<Task[]>({ method: 'GET', url: 'tasks/' });
-      return { ok: true, data };
-    } catch (e: unknown) {
-      let errorMes = 'Failed to load tasks';
-
-      if (axios.isAxiosError(e)) {
-        errorMes = e.response?.data?.detail ?? e.message;
-      } else if (e instanceof Error) {
-        errorMes = e.message;
-      }
-      return {
-        ok: false,
-        error: errorMes
-      };
-    }
+  getAll: (): Promise<ApiResponse<Task[]>> => {
+    return get<Task[]>('tasks/');
   },
 
-  getById: async (id: number): Promise<Task> => {
-    const result = await api<Task>({ method: 'GET', url: `tasks/${id}/` });
-    return result.data;
+  getById: (id: number): Promise<ApiResponse<Task>> => {
+    return get<Task>(`tasks/${id}/`);
   },
 
-  create: async (taskData: Omit<Task, 'id' | 'completed'>): Promise<Task> => {
-    const result = await api<Task>({
-      method: 'POST',
-      url: 'tasks/',
-      data: taskData
-    });
-    return result.data;
+  create: (taskData: CreateTaskDto): Promise<ApiResponse<Task>> => {
+    return post<Task, CreateTaskDto>('tasks/', taskData);
   },
 
-  update: async (id: number, fields: Partial<Omit<Task, 'id'>>): Promise<Task> => {
-    const result = await api<Task>({
-      method: 'PATCH',
-      url: `tasks/${id}/`,
-      data: fields
-    });
-    return result.data;
+  update: (id: number, fields: UpdateTaskDto): Promise<ApiResponse<Task>> => {
+    return patch<Task, UpdateTaskDto>(`tasks/${id}/`, fields);
   },
 
-  delete: async (id: number): Promise<void> => {
-    await api<void>({ method: 'DELETE', url: `tasks/${id}/` });
+  delete: (id: number): Promise<ApiResponse<void>> => {
+    return del<void>(`tasks/${id}/`);
   }
 };

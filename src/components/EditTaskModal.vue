@@ -21,6 +21,8 @@ const validate = (values: Partial<Task>): Errors<Partial<Task>> => {
   const errors: Errors<Partial<Task>> = {};
   if (values.title !== undefined && !values.title.trim()) {
     errors.title = 'Title cannot be empty';
+  } else if (values.title !== undefined && values.title.trim().length < 3) {
+    errors.title = 'Title must be at least 3 symbols';
   }
   return errors;
 };
