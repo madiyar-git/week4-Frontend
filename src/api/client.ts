@@ -92,7 +92,7 @@ api.interceptors.response.use(
       interface RefreshResponse {
         access: string;
       }
-      const { data } = await api.post<RefreshResponse>('/api/token/refresh/', { refresh });
+      const { data } = await api.post<RefreshResponse>('/token/refresh/', { refresh });
       localStorage.setItem('access_token', data.access);
 
       if (originalRequest.headers) {

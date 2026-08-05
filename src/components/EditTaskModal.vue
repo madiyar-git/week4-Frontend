@@ -4,6 +4,7 @@ import type { Task } from '@/types/task';
 import { useForm, type Errors } from '@/composables/useForm';
 import BaseInput from '@/components/base/BaseInput.vue';
 import BaseButton from '@/components/base/BaseButton.vue';
+import BaseModal from '@/components/base/BaseModal.vue';
 
 const props = defineProps<{
   open: boolean;
@@ -61,84 +62,51 @@ const onSubmit = handleSubmit((formData) => {
 </script>
 
 <template>
-  <div v-if="open" class="modal-backdrop">
-    <div class="modal-content">
-      <h3>Edit Task</h3>
-      <form @submit.prevent="onSubmit">
-        <BaseInput
-          v-model="values.title"
-          label="Title"
-          :error="getErrorString(errors.title)"
-          required
-        />
-        <BaseInput v-model="values.description" label="Description" />
+  <BaseModal :open="open" title="Edit Task" @close="handleClose">
+    <form id="edit-task-form" class="task-form" @submit.prevent="onSubmit">
+      <BaseInput
+        v-model="values.title"
+        label="Title"
+        :error="getErrorString(errors.title)"
+        required
+      />
 
-        <div class="form-group">
-          <label for="priority">Priority</label>
-          <select
-            id="priority"
-            v-model="values.priority"
-            :class="['priority-select', values.priority]"
-          >
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-          </select>
-        </div>
+      <BaseInput v-model="values.description" label="Description" />
 
-        <div class="modal-actions">
-          <BaseButton type="button" variant="secondary" @click="handleClose">Cancel</BaseButton>
-          <BaseButton type="submit" variant="primary" :loading="loading">Save Changes</BaseButton>
-        </div>
-      </form>
-    </div>
-  </div>
+      <div class="form-group">
+        <label for="priority">Priority</label>
+        <select
+          id="priority"
+          v-model="values.priority"
+          :class="['priority-select', values.priority]"
+        >
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+      </div>
+    </form>
+
+    <template #footer>
+      <BaseButton type="button" variant="secondary" @click="handleClose"> Cancel </BaseButton>
+      <BaseButton type="submit" form="edit-task-form" variant="primary" :loading="loading">
+        Save Changes
+      </BaseButton>
+    </template>
+  </BaseModal>
 </template>
 
 <style scoped>
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  animation: fadeIn 0.2s ease-out;
-}
-
-.modal-content {
-  background: #121212;
-  border: 1px solid #282828;
-  border-radius: 12px;
-  padding: 24px;
-  width: 100%;
-  max-width: 480px;
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.5);
+.task-form {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  color: #ffffff;
-  animation: slideUp 0.2s ease-out;
-}
-
-.modal-content h3 {
-  margin: 0;
-  font-size: 1.35rem;
-  color: #ffffff;
-  font-weight: 700;
-  letter-spacing: -0.02em;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-top: 12px;
 }
 
 .form-group label {
@@ -152,7 +120,7 @@ const onSubmit = handleSubmit((formData) => {
 .priority-select {
   width: 100%;
   padding: 12px 16px;
-  border-radius: 3px;
+  border-radius: 50px;
   font-size: 0.875rem;
   font-weight: 700;
   letter-spacing: 0.5px;
@@ -190,32 +158,5 @@ const onSubmit = handleSubmit((formData) => {
   color: #ffffff;
   font-weight: 600;
   padding: 8px;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 20px;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 </style>
