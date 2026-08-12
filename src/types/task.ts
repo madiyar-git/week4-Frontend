@@ -4,4 +4,5 @@ export interface Task {
   description?: string;
   completed: boolean;
   priority: 'low' | 'medium' | 'high';
+  created_at: Date;
 }
