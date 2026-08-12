@@ -5,12 +5,8 @@ import { useApi } from '@/composables/useApi';
 import BaseButton from '@/components/base/BaseButton.vue';
 import BaseInput from '@/components/base/BaseInput.vue';
 import BaseCard from '@/components/base/BaseCard.vue';
-import { apiResponse } from '@/api/client';
-
-interface RegisterResponse {
-  id: number;
-  username: string;
-}
+import { authApi } from '@/api/authApi';
+import { type RegisterResponse } from '@/api/authApi';
 
 const router = useRouter();
 
@@ -61,17 +57,14 @@ const isFormValid = computed<boolean>(() => {
 async function handleSubmit() {
   if (!isFormValid.value || isLoading.value) return;
 
-  const result = await execute(() =>
-    apiResponse<RegisterResponse>({
-      method: 'POST',
-      url: 'register/',
-      data: {
-        username: username.value,
-        password: password.value,
-        confirm_password: password_confirm.value
-      }
-    })
-  );
+  const result = await execute(async () => {
+    const res = await authApi.register({
+      username: username.value,
+      password: password.value,
+      confirm_password: password_confirm.value
+    });
+    return res.data;
+  });
 
   if (result) {
     router.push({
@@ -151,7 +144,8 @@ async function handleSubmit() {
   align-items: center;
   justify-content: start;
   padding: 40px 20px;
-  min-height: 80vh;
+  min-height: 70vh;
+  width: 20vw;
 }
 
 .register-card {

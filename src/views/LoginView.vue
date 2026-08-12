@@ -3,12 +3,12 @@ import { useAuthStore } from '@/stores/auth';
 import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useApi } from '@/composables/useApi';
-// import { useApi } from 'C:/Users/user/Desktop/week3/vue-project/src/composables/useApi';
+import { authApi } from '@/api/authApi';
+import type { LoginResponse } from '@/api/authApi';
 import BaseButton from '@/components/base/BaseButton.vue';
 import BaseInput from '@/components/base/BaseInput.vue';
 import BaseCard from '@/components/base/BaseCard.vue';
 import BaseForm from '@/components/base/BaseForm.vue';
-import { apiResponse } from '@/api/client';
 
 const router = useRouter();
 const route = useRoute();
@@ -18,21 +18,7 @@ const username = ref<string>('');
 const password = ref<string>('');
 const successMessage = ref<string | null>(null);
 
-interface LoginResponse {
-  access: string;
-  refresh: string;
-}
-
-const { loading: isLoading, error, execute } = useApi<LoginResponse>();
-
-const formErrors = computed(() => {
-  if (!error.value) return {};
-
-  return {
-    username: 'Wrong username or password. Try Again.',
-    password: 'Wrong username or password. Try Again.'
-  };
-});
+const { loading: isLoading, error, execute, status_code } = useApi<LoginResponse>();
 
 const isFormValid = computed<boolean>(() => {
   const isUsernameValid = username.value.trim().length >= 3;
@@ -40,23 +26,29 @@ const isFormValid = computed<boolean>(() => {
   return isUsernameValid && isPasswordValid;
 });
 
+const errorMsg = computed(() => {
+  if (status_code.value === 429) {
+    return 'Too many attempts. Please try again later.';
+  }
+  if (error.value) {
+    return 'Wrong username or password. Try again.';
+  }
+  return null;
+});
+
 async function handleSubmit() {
   if (!isFormValid.value || isLoading.value) return;
 
-  const result = await execute(() =>
-    apiResponse<LoginResponse>({
-      method: 'POST',
-      url: 'token/',
-      data: {
-        username: username.value,
-        password: password.value
-      }
-    })
-  );
+  const result = await execute(async () => {
+    const res = await authApi.login({
+      username: username.value,
+      password: password.value
+    });
+    return res.data;
+  });
 
-  if (result && result.access && result.refresh) {
+  if (result?.access && result?.refresh) {
     auth.login(username.value, result.access, result.refresh);
-
     const redirectPath = (route.query.redirect as string) || '/tasks';
     router.push(redirectPath);
   }
@@ -83,7 +75,9 @@ onMounted(() => {
         <h2>Sign in</h2>
       </template>
 
-      <BaseForm :errors="formErrors" :is-submitting="isLoading" @submit="handleSubmit">
+      <BaseForm :is-submitting="isLoading" @submit="handleSubmit">
+        <div v-if="errorMsg" class="error-banner">{{ errorMsg }}</div>
+
         <BaseInput
           v-model="username"
           name="username"
@@ -100,6 +94,7 @@ onMounted(() => {
           placeholder="Enter your password"
           autocomplete="current-password"
         />
+
         <BaseButton
           type="submit"
           variant="primary"
@@ -123,7 +118,7 @@ onMounted(() => {
   justify-content: start;
   padding: 40px 20px;
   min-height: 70vh;
-  width: 22vw;
+  width: 20vw;
 }
 
 h2 {
@@ -134,13 +129,6 @@ h2 {
   font-size: 1.75rem;
   font-weight: 700;
   color: #ffffff;
-}
-
-.error-message {
-  color: #e91429;
-  font-size: 0.85rem;
-  margin-bottom: 16px;
-  text-align: left;
 }
 
 .success-banner {
@@ -154,5 +142,16 @@ h2 {
   max-width: 400px;
   text-align: center;
   box-sizing: border-box;
+}
+
+.error-banner {
+  background-color: rgba(233, 20, 41, 0.15);
+  border: 1px solid rgba(233, 20, 41, 0.35);
+  color: #ff4d5e;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  margin-bottom: 16px;
+  text-align: center;
 }
 </style>

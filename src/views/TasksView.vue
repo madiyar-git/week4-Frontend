@@ -45,7 +45,7 @@ const { loading: isCreateLoading, error: createError, execute: createExecute } =
 const { loading: isActionLoading, error: actionError, execute: actionExecute } = useApi<unknown>();
 
 const searchInput = ref<string>('');
-
+// [ ] Поиск задания по названию
 const filteredTasks = computed(() => {
   const query = searchInput.value.trim().toLowerCase();
   if (!query) return tasks.value;
@@ -61,7 +61,7 @@ watch(searchInput, () => {
 
 const isEditModalOpen = ref<boolean>(false);
 const taskToEdit = ref<Task | null>(null);
-
+// [ ] Изменение задания через модалку
 function handleEditTask(task: Task): void {
   taskToEdit.value = task;
   isEditModalOpen.value = true;
@@ -108,7 +108,7 @@ const taskToDelete = ref<Task | null>(null);
 const isGlobalLoading = computed(
   () => isFetchLoading.value || isCreateLoading.value || isActionLoading.value
 );
-
+// [ ] Загрузка заданий
 async function loadTasks(): Promise<void> {
   const result = await fetchExecute(async () => {
     const response = await taskApi.getAll();
@@ -123,7 +123,7 @@ async function loadTasks(): Promise<void> {
     }
   }
 }
-
+// [ ] Создание задания
 const onSubmit = handleSubmit(async (fromData) => {
   if (isGlobalLoading.value) return;
   const result = await createExecute(async () => {
@@ -141,7 +141,7 @@ const onSubmit = handleSubmit(async (fromData) => {
     currentPage.value = 1;
   }
 });
-
+// [ ] Изменения задания
 async function handleToggleCompleted(id: number, fields: Partial<Task>): Promise<void> {
   await actionExecute(() => taskApi.update(id, fields));
 
@@ -158,6 +158,7 @@ async function handleToggleCompleted(id: number, fields: Partial<Task>): Promise
   }
 }
 
+//[ ] Удаление задания через модалку
 function handleDeleteTask(id: number): void {
   const foundTask = tasks.value.find((t) => t.id === id);
   if (foundTask) {
@@ -165,7 +166,6 @@ function handleDeleteTask(id: number): void {
     isDeleteModalOpen.value = true;
   }
 }
-
 async function confirmDeleteTask(): Promise<void> {
   if (!taskToDelete.value) return;
 
@@ -185,7 +185,7 @@ function closeDeleteModal(): void {
   isDeleteModalOpen.value = false;
   taskToDelete.value = null;
 }
-
+//[ ] Груповые действия
 async function bulkAction(
   actionName: 'toggle_all' | 'clear_completed' | 'clear_all'
 ): Promise<void> {

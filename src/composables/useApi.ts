@@ -9,6 +9,7 @@ export function useApi<T>() {
   const data: Ref<T | null> = ref(null);
   const loading = ref<boolean>(false);
   const error = ref<string | null>(null);
+  const status_code = ref<number | null>(null);
 
   const reset = () => {
     data.value = null;
@@ -26,6 +27,7 @@ export function useApi<T>() {
       return result;
     } catch (e: unknown) {
       if (axios.isAxiosError(e)) {
+        status_code.value = e.response?.status ?? null;
         const axiosError = e as AxiosError<ApiErrorStructure>;
         error.value = axiosError.response?.data?.detail ?? axiosError.message;
       } else if (e instanceof Error) {
@@ -39,5 +41,5 @@ export function useApi<T>() {
     }
   };
 
-  return { data, loading, error, execute, reset };
+  return { data, loading, error, execute, reset, status_code };
 }
