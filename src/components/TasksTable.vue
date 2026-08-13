@@ -12,8 +12,11 @@ import {
 } from 'naive-ui';
 import type { Task } from '@/types/task';
 import { taskApi } from '@/api/tasks';
+import { useNotify } from '@/composables/useNotify';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.vue';
 import EditTaskModal from '@/components/EditTaskModal.vue';
+
+const notify = useNotify();
 
 const loading = ref(false);
 const error = ref<string | null>(null);
@@ -22,6 +25,34 @@ const tasks = ref<Task[]>([]);
 const searchQuery = ref('');
 
 const checkedRowKeys = ref<DataTableRowKey[]>([]);
+
+const isCreateModalOpen = ref(false);
+const isCreateLoading = ref(false);
+
+async function handleCreateTask(newTaskData: {
+  title: string;
+  description: string;
+  priority: Task['priority'];
+}) {
+  isCreateLoading.value = true;
+  try {
+    await taskApi.create({
+      title: newTaskData.title.trim(),
+      description: newTaskData.description.trim(),
+      priority: newTaskData.priority
+    });
+
+    isCreateModalOpen.value = false;
+    notify.success('Added new task');
+    await fetchTasks();
+  } catch (err: unknown) {
+    // const message = err instanceof Error ? err.message : String(err);
+    // alert(`Failed to create task: ${message}`);
+    notify.error(err);
+  } finally {
+    isCreateLoading.value = false;
+  }
+}
 
 const pagination = reactive({
   page: 1,
@@ -142,10 +173,10 @@ async function toggleTaskStatus(task: Task) {
     const updatedCompleted = !task.completed;
 
     await taskApi.update(task.id, { completed: updatedCompleted });
-
+    notify.success(`Task's "${task.title}" status updated`);
     await fetchTasks();
   } catch (err: unknown) {
-    alert(`Failed to update status: ${getErrorMessage(err)}`);
+    notify.error(err);
   }
 }
 
@@ -157,7 +188,7 @@ async function fetchTasks() {
     const response = await taskApi.getAll();
     tasks.value = response.data;
   } catch (err: unknown) {
-    error.value = getErrorMessage(err) || 'Failed to load tasks.';
+    notify.error(err);
   } finally {
     loading.value = false;
   }
@@ -170,14 +201,16 @@ function handleCheck(keys: DataTableRowKey[]) {
 async function confirmBulkDelete() {
   if (checkedRowKeys.value.length === 0) return;
   isActionLoading.value = true;
+  const count = checkedRowKeys.value.length;
 
   try {
     await Promise.all(checkedRowKeys.value.map((id) => taskApi.delete(Number(id))));
+    notify.success(`Deleted tasks: ${count}`);
     checkedRowKeys.value = [];
     isBulkDeleteModalOpen.value = false;
     await fetchTasks();
   } catch (err: unknown) {
-    alert(`Bulk delete failed: ${getErrorMessage(err)}`);
+    notify.error(err);
   } finally {
     isActionLoading.value = false;
   }
@@ -190,6 +223,7 @@ async function handleBulkToggleStatus(completed: boolean) {
   try {
     await Promise.all(checkedRowKeys.value.map((id) => taskApi.update(Number(id), { completed })));
     checkedRowKeys.value = [];
+    notify.success(`Status for ${checkedRowKeys.value.length} updated`);
     await fetchTasks();
   } catch (err: unknown) {
     alert(`Bulk status update failed: ${getErrorMessage(err)}`);
@@ -209,11 +243,12 @@ async function confirmDelete() {
 
   try {
     await taskApi.delete(selectedTask.value.id);
+    notify.success(`Task deleted`);
     isDeleteModalOpen.value = false;
     selectedTask.value = null;
     await fetchTasks();
   } catch (err: unknown) {
-    alert(`Delete failed: ${getErrorMessage(err)}`);
+    notify.error(err);
   } finally {
     isActionLoading.value = false;
   }
@@ -232,9 +267,10 @@ async function confirmEdit(payload: Partial<Task>) {
     await taskApi.update(selectedTask.value.id, payload);
     isEditModalOpen.value = false;
     selectedTask.value = null;
+    notify.success(`Changes saved"`);
     await fetchTasks();
   } catch (err: unknown) {
-    alert(`Update failed: ${getErrorMessage(err)}`);
+    notify.error(err);
   } finally {
     isActionLoading.value = false;
   }
@@ -273,6 +309,15 @@ defineExpose({
           </NButton>
         </NSpace>
       </div>
+      <div class="header-actions">
+        <BaseButton variant="primary" @click="isCreateModalOpen = true"> + Create Task </BaseButton>
+      </div>
+      <CreateTaskModal
+        :open="isCreateModalOpen"
+        :loading="isCreateLoading"
+        @close="isCreateModalOpen = false"
+        @create="handleCreateTask"
+      />
     </div>
 
     <div v-if="error" class="error-banner">
