@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, h } from 'vue';
+import { ref, reactive, onMounted, h } from 'vue';
+import { storeToRefs } from 'pinia';
 import {
   NDataTable,
   NTag,
@@ -11,48 +12,22 @@ import {
   type DataTableRowKey
 } from 'naive-ui';
 import type { Task } from '@/types/task';
-import { taskApi } from '@/api/tasks';
-import { useNotify } from '@/composables/useNotify';
+import { useTaskStore } from '@/stores/tasks';
+
+import BaseButton from '@/components/base/BaseButton.vue';
+import CreateTaskModal from '@/components/CreateTaskModal.vue';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.vue';
 import EditTaskModal from '@/components/EditTaskModal.vue';
 
-const notify = useNotify();
-
-const loading = ref(false);
-const error = ref<string | null>(null);
-const tasks = ref<Task[]>([]);
-
-const searchQuery = ref('');
-
-const checkedRowKeys = ref<DataTableRowKey[]>([]);
+const taskStore = useTaskStore();
+const { isLoading, error, searchQuery, checkedRowKeys, filteredTasks } = storeToRefs(taskStore);
 
 const isCreateModalOpen = ref(false);
-const isCreateLoading = ref(false);
-
-async function handleCreateTask(newTaskData: {
-  title: string;
-  description: string;
-  priority: Task['priority'];
-}) {
-  isCreateLoading.value = true;
-  try {
-    await taskApi.create({
-      title: newTaskData.title.trim(),
-      description: newTaskData.description.trim(),
-      priority: newTaskData.priority
-    });
-
-    isCreateModalOpen.value = false;
-    notify.success('Added new task');
-    await fetchTasks();
-  } catch (err: unknown) {
-    // const message = err instanceof Error ? err.message : String(err);
-    // alert(`Failed to create task: ${message}`);
-    notify.error(err);
-  } finally {
-    isCreateLoading.value = false;
-  }
-}
+const isDeleteModalOpen = ref(false);
+const isBulkDeleteModalOpen = ref(false);
+const isEditModalOpen = ref(false);
+const isActionLoading = ref(false);
+const selectedTask = ref<Task | null>(null);
 
 const pagination = reactive({
   page: 1,
@@ -61,22 +36,98 @@ const pagination = reactive({
   pageSizes: [5, 10, 20, 50]
 });
 
-const isDeleteModalOpen = ref(false);
-const isBulkDeleteModalOpen = ref(false);
-const isEditModalOpen = ref(false);
-const selectedTask = ref<Task | null>(null);
-const isActionLoading = ref(false);
-
 const priorityWeight: Record<Task['priority'], number> = {
   low: 1,
   medium: 2,
   high: 3
 };
 
+function fetchTasks() {
+  taskStore.fetchTasks();
+}
+
+async function handleCreateTask(newTaskData: {
+  title: string;
+  description: string;
+  priority: Task['priority'];
+}) {
+  isActionLoading.value = true;
+  try {
+    await taskStore.createTask({
+      title: newTaskData.title.trim(),
+      description: newTaskData.description.trim(),
+      priority: newTaskData.priority
+    });
+    isCreateModalOpen.value = false;
+  } catch {
+  } finally {
+    isActionLoading.value = false;
+  }
+}
+
+function openEditModal(task: Task) {
+  selectedTask.value = task;
+  isEditModalOpen.value = true;
+}
+
+async function confirmEdit(payload: Partial<Task>) {
+  if (!selectedTask.value) return;
+  isActionLoading.value = true;
+  try {
+    await taskStore.updateTask(selectedTask.value.id, payload);
+    isEditModalOpen.value = false;
+    selectedTask.value = null;
+  } catch {
+  } finally {
+    isActionLoading.value = false;
+  }
+}
+
+function openDeleteModal(task: Task) {
+  selectedTask.value = task;
+  isDeleteModalOpen.value = true;
+}
+
+async function confirmDelete() {
+  if (!selectedTask.value) return;
+  isActionLoading.value = true;
+  try {
+    await taskStore.deleteTask(selectedTask.value.id);
+    isDeleteModalOpen.value = false;
+    selectedTask.value = null;
+  } catch {
+  } finally {
+    isActionLoading.value = false;
+  }
+}
+
+async function confirmBulkDelete() {
+  isActionLoading.value = true;
+  try {
+    await taskStore.bulkDeleteTasks();
+    isBulkDeleteModalOpen.value = false;
+  } catch {
+  } finally {
+    isActionLoading.value = false;
+  }
+}
+
+async function handleBulkToggleStatus(completed: boolean) {
+  isActionLoading.value = true;
+  try {
+    await taskStore.bulkUpdateTaskStatus(completed);
+  } catch {
+  } finally {
+    isActionLoading.value = false;
+  }
+}
+
+function handleCheck(keys: DataTableRowKey[]) {
+  checkedRowKeys.value = keys;
+}
+
 const columns: DataTableColumns<Task> = [
-  {
-    type: 'selection'
-  },
+  { type: 'selection' },
   {
     title: 'Title',
     key: 'title',
@@ -113,7 +164,7 @@ const columns: DataTableColumns<Task> = [
             userSelect: 'none',
             transition: 'all 0.2s ease'
           },
-          onClick: () => toggleTaskStatus(row)
+          onClick: () => taskStore.toggleTaskStatus(row)
         },
         {
           default: () => (row.completed ? '✓ Completed' : '○ In Progress')
@@ -153,129 +204,6 @@ const columns: DataTableColumns<Task> = [
   }
 ];
 
-const filteredTasks = computed(() => {
-  if (!searchQuery.value.trim()) return tasks.value;
-  const q = searchQuery.value.toLowerCase().trim();
-  return tasks.value.filter((task) => {
-    const matchTitle = task.title.toLowerCase().includes(q);
-    const matchDesc = task.description?.toLowerCase().includes(q) ?? false;
-    return matchTitle || matchDesc;
-  });
-});
-
-function getErrorMessage(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  return String(err);
-}
-
-async function toggleTaskStatus(task: Task) {
-  try {
-    const updatedCompleted = !task.completed;
-
-    await taskApi.update(task.id, { completed: updatedCompleted });
-    notify.success(`Task's "${task.title}" status updated`);
-    await fetchTasks();
-  } catch (err: unknown) {
-    notify.error(err);
-  }
-}
-
-async function fetchTasks() {
-  loading.value = true;
-  error.value = null;
-
-  try {
-    const response = await taskApi.getAll();
-    tasks.value = response.data;
-  } catch (err: unknown) {
-    notify.error(err);
-  } finally {
-    loading.value = false;
-  }
-}
-
-function handleCheck(keys: DataTableRowKey[]) {
-  checkedRowKeys.value = keys;
-}
-
-async function confirmBulkDelete() {
-  if (checkedRowKeys.value.length === 0) return;
-  isActionLoading.value = true;
-  const count = checkedRowKeys.value.length;
-
-  try {
-    await Promise.all(checkedRowKeys.value.map((id) => taskApi.delete(Number(id))));
-    notify.success(`Deleted tasks: ${count}`);
-    checkedRowKeys.value = [];
-    isBulkDeleteModalOpen.value = false;
-    await fetchTasks();
-  } catch (err: unknown) {
-    notify.error(err);
-  } finally {
-    isActionLoading.value = false;
-  }
-}
-
-async function handleBulkToggleStatus(completed: boolean) {
-  if (checkedRowKeys.value.length === 0) return;
-  isActionLoading.value = true;
-
-  try {
-    await Promise.all(checkedRowKeys.value.map((id) => taskApi.update(Number(id), { completed })));
-    checkedRowKeys.value = [];
-    notify.success(`Status for ${checkedRowKeys.value.length} updated`);
-    await fetchTasks();
-  } catch (err: unknown) {
-    alert(`Bulk status update failed: ${getErrorMessage(err)}`);
-  } finally {
-    isActionLoading.value = false;
-  }
-}
-
-function openDeleteModal(task: Task) {
-  selectedTask.value = task;
-  isDeleteModalOpen.value = true;
-}
-
-async function confirmDelete() {
-  if (!selectedTask.value) return;
-  isActionLoading.value = true;
-
-  try {
-    await taskApi.delete(selectedTask.value.id);
-    notify.success(`Task deleted`);
-    isDeleteModalOpen.value = false;
-    selectedTask.value = null;
-    await fetchTasks();
-  } catch (err: unknown) {
-    notify.error(err);
-  } finally {
-    isActionLoading.value = false;
-  }
-}
-
-function openEditModal(task: Task) {
-  selectedTask.value = task;
-  isEditModalOpen.value = true;
-}
-
-async function confirmEdit(payload: Partial<Task>) {
-  if (!selectedTask.value) return;
-  isActionLoading.value = true;
-
-  try {
-    await taskApi.update(selectedTask.value.id, payload);
-    isEditModalOpen.value = false;
-    selectedTask.value = null;
-    notify.success(`Changes saved"`);
-    await fetchTasks();
-  } catch (err: unknown) {
-    notify.error(err);
-  } finally {
-    isActionLoading.value = false;
-  }
-}
-
 onMounted(() => {
   fetchTasks();
 });
@@ -309,15 +237,10 @@ defineExpose({
           </NButton>
         </NSpace>
       </div>
+
       <div class="header-actions">
         <BaseButton variant="primary" @click="isCreateModalOpen = true"> + Create Task </BaseButton>
       </div>
-      <CreateTaskModal
-        :open="isCreateModalOpen"
-        :loading="isCreateLoading"
-        @close="isCreateModalOpen = false"
-        @create="handleCreateTask"
-      />
     </div>
 
     <div v-if="error" class="error-banner">
@@ -327,7 +250,7 @@ defineExpose({
 
     <NDataTable
       v-else
-      :loading="loading"
+      :loading="isLoading"
       :columns="columns"
       :data="filteredTasks"
       :pagination="pagination"
@@ -339,6 +262,14 @@ defineExpose({
         <NEmpty description="No tasks found" />
       </template>
     </NDataTable>
+
+    <!-- Modals -->
+    <CreateTaskModal
+      :open="isCreateModalOpen"
+      :loading="isActionLoading"
+      @close="isCreateModalOpen = false"
+      @create="handleCreateTask"
+    />
 
     <ConfirmDeleteModal
       :open="isDeleteModalOpen"
