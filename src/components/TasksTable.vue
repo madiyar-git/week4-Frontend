@@ -1,3 +1,7 @@
+Пагинация не работала, потому что в Naive UI свойства `page` и `pageSize` работают в
+**контролируемом режиме**. Когда вы кликали по кнопкам, компонент не мог самостоятельно изменить
+значения в объекте `pagination` — ему требовались колбэки `onChange` и `onUpdatePageSize`. ###
+Исправленный `TasksTable.vue` ```vue
 <script setup lang="ts">
 import { ref, reactive, onMounted, h } from 'vue';
 import { storeToRefs } from 'pinia';
@@ -33,7 +37,14 @@ const pagination = reactive({
   page: 1,
   pageSize: 10,
   showSizePicker: true,
-  pageSizes: [5, 10, 20, 50]
+  pageSizes: [5, 10, 20, 50],
+  onChange: (page: number) => {
+    pagination.page = page;
+  },
+  onUpdatePageSize: (pageSize: number) => {
+    pagination.pageSize = pageSize;
+    pagination.page = 1;
+  }
 });
 
 const priorityWeight: Record<Task['priority'], number> = {
@@ -112,10 +123,13 @@ async function confirmBulkDelete() {
   }
 }
 
-async function handleBulkToggleStatus(completed: boolean) {
+async function handleSmartBulkToggle() {
+  const selectedTasks = filteredTasks.value.filter((t) => checkedRowKeys.value.includes(t.id));
+  const areAllCompleted = selectedTasks.length > 0 && selectedTasks.every((t) => t.completed);
+
   isActionLoading.value = true;
   try {
-    await taskStore.bulkUpdateTaskStatus(completed);
+    await taskStore.bulkUpdateTaskStatus(!areAllCompleted);
   } catch {
   } finally {
     isActionLoading.value = false;
@@ -223,23 +237,26 @@ defineExpose({
         class="search-input"
       />
 
-      <div v-if="checkedRowKeys.length > 0" class="bulk-actions">
-        <span class="selected-count"> Selected {{ checkedRowKeys.length }} task(s) </span>
-        <NSpace align="center">
-          <NButton size="small" type="success" secondary @click="handleBulkToggleStatus(true)">
-            Mark Done
-          </NButton>
-          <NButton size="small" type="warning" secondary @click="handleBulkToggleStatus(false)">
-            Mark Pending
-          </NButton>
-          <NButton size="small" type="error" @click="isBulkDeleteModalOpen = true">
-            Delete Selected
-          </NButton>
-        </NSpace>
-      </div>
+      <div class="toolbar-actions">
+        <Transition name="fade">
+          <div v-if="checkedRowKeys.length > 0" class="bulk-actions">
+            <span class="selected-count"> Selected {{ checkedRowKeys.length }} task(s) </span>
+            <NSpace align="center">
+              <NButton size="small" type="primary" secondary @click="handleSmartBulkToggle">
+                Toggle Status
+              </NButton>
+              <NButton size="small" type="error" @click="isBulkDeleteModalOpen = true">
+                Delete Selected
+              </NButton>
+            </NSpace>
+          </div>
+        </Transition>
 
-      <div class="header-actions">
-        <BaseButton variant="primary" @click="isCreateModalOpen = true"> + Create Task </BaseButton>
+        <div class="header-actions">
+          <BaseButton variant="primary" @click="isCreateModalOpen = true">
+            + Create Task
+          </BaseButton>
+        </div>
       </div>
     </div>
 
@@ -263,7 +280,6 @@ defineExpose({
       </template>
     </NDataTable>
 
-    <!-- Modals -->
     <CreateTaskModal
       :open="isCreateModalOpen"
       :loading="isActionLoading"
@@ -309,11 +325,19 @@ defineExpose({
   align-items: center;
   gap: 16px;
   margin-bottom: 16px;
-  flex-wrap: wrap;
+  min-height: 40px;
 }
 
 .search-input {
   max-width: 360px;
+}
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+  height: 40px;
 }
 
 .bulk-actions {
@@ -321,7 +345,9 @@ defineExpose({
   align-items: center;
   gap: 12px;
   background-color: rgba(255, 255, 255, 0.05);
-  padding: 6px 12px;
+  padding: 0 12px;
+  height: 40px;
+  box-sizing: border-box;
   border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -330,6 +356,7 @@ defineExpose({
   font-size: 0.875rem;
   font-weight: 600;
   color: #1ed760;
+  white-space: nowrap;
 }
 
 .error-banner {
@@ -344,4 +371,19 @@ defineExpose({
   align-items: center;
   gap: 12px;
 }
+
+.fade-enter-active,
+.fade-leave-active {
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateX(10px);
+}
 </style>
+
+```
