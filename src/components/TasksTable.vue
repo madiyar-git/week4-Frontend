@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, h } from 'vue';
+import { ref, reactive, onMounted, watch, h } from 'vue';
 import { storeToRefs } from 'pinia';
 import {
   NDataTable,
@@ -9,7 +9,8 @@ import {
   NEmpty,
   NInput,
   type DataTableColumns,
-  type DataTableRowKey
+  type DataTableRowKey,
+  type DataTableSortState
 } from 'naive-ui';
 import type { Task } from '@/types/task';
 import { useTaskStore } from '@/stores/tasks';
@@ -20,7 +21,7 @@ import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.vue';
 import EditTaskModal from '@/components/EditTaskModal.vue';
 
 const taskStore = useTaskStore();
-const { isLoading, error, searchQuery, checkedRowKeys, filteredTasks } = storeToRefs(taskStore);
+const { isLoading, error, searchQuery, checkedRowKeys, tasks, totalCount } = storeToRefs(taskStore);
 
 const isCreateModalOpen = ref(false);
 const isDeleteModalOpen = ref(false);
@@ -28,22 +29,52 @@ const isBulkDeleteModalOpen = ref(false);
 const isEditModalOpen = ref(false);
 const isActionLoading = ref(false);
 const selectedTask = ref<Task | null>(null);
+const currentOrdering = ref<string>('-created_at');
 
 const pagination = reactive({
   page: 1,
   pageSize: 10,
+  itemCount: 0,
   showSizePicker: true,
-  pageSizes: [5, 10, 20, 50]
+  pageSizes: [5, 10, 20, 50],
+  onChange: (page: number) => {
+    pagination.page = page;
+    loadServerTasks();
+  },
+  onUpdatePageSize: (pageSize: number) => {
+    pagination.pageSize = pageSize;
+    pagination.page = 1;
+    loadServerTasks();
+  }
 });
 
-const priorityWeight: Record<Task['priority'], number> = {
-  low: 1,
-  medium: 2,
-  high: 3
-};
+watch(totalCount, (newTotal) => {
+  pagination.itemCount = newTotal;
+});
 
-function fetchTasks() {
-  taskStore.fetchTasks();
+watch(searchQuery, () => {
+  pagination.page = 1;
+  loadServerTasks();
+});
+
+function loadServerTasks() {
+  taskStore.fetchTasks({
+    page: pagination.page,
+    page_size: pagination.pageSize,
+    search: searchQuery.value,
+    ordering: currentOrdering.value
+  });
+}
+
+function handleSorterChange(options: DataTableSortState | null) {
+  if (!options || !options.order) {
+    currentOrdering.value = '-created_at';
+  } else {
+    currentOrdering.value =
+      options.order === 'descend' ? `-${options.columnKey}` : `${options.columnKey}`;
+  }
+  pagination.page = 1;
+  loadServerTasks();
 }
 
 async function handleCreateTask(newTaskData: {
@@ -59,6 +90,7 @@ async function handleCreateTask(newTaskData: {
       priority: newTaskData.priority
     });
     isCreateModalOpen.value = false;
+    loadServerTasks();
   } catch {
   } finally {
     isActionLoading.value = false;
@@ -77,6 +109,7 @@ async function confirmEdit(payload: Partial<Task>) {
     await taskStore.updateTask(selectedTask.value.id, payload);
     isEditModalOpen.value = false;
     selectedTask.value = null;
+    loadServerTasks();
   } catch {
   } finally {
     isActionLoading.value = false;
@@ -95,6 +128,7 @@ async function confirmDelete() {
     await taskStore.deleteTask(selectedTask.value.id);
     isDeleteModalOpen.value = false;
     selectedTask.value = null;
+    loadServerTasks();
   } catch {
   } finally {
     isActionLoading.value = false;
@@ -106,16 +140,21 @@ async function confirmBulkDelete() {
   try {
     await taskStore.bulkDeleteTasks();
     isBulkDeleteModalOpen.value = false;
+    loadServerTasks();
   } catch {
   } finally {
     isActionLoading.value = false;
   }
 }
 
-async function handleBulkToggleStatus(completed: boolean) {
+async function handleSmartBulkToggle() {
+  const selectedTasks = tasks.value.filter((t) => checkedRowKeys.value.includes(t.id));
+  const areAllCompleted = selectedTasks.length > 0 && selectedTasks.every((t) => t.completed);
+
   isActionLoading.value = true;
   try {
-    await taskStore.bulkUpdateTaskStatus(completed);
+    await taskStore.bulkUpdateTaskStatus(!areAllCompleted);
+    loadServerTasks();
   } catch {
   } finally {
     isActionLoading.value = false;
@@ -132,12 +171,12 @@ const columns: DataTableColumns<Task> = [
     title: 'Title',
     key: 'title',
     ellipsis: { tooltip: true },
-    sorter: 'default'
+    sorter: true
   },
   {
     title: 'Priority',
     key: 'priority',
-    sorter: (row1, row2) => priorityWeight[row1.priority] - priorityWeight[row2.priority],
+    sorter: true,
     render(row) {
       const typeMap = { low: 'success', medium: 'warning', high: 'error' } as const;
       return h(
@@ -150,7 +189,7 @@ const columns: DataTableColumns<Task> = [
   {
     title: 'Status',
     key: 'completed',
-    sorter: (row1, row2) => Number(row1.completed) - Number(row2.completed),
+    sorter: true,
     render(row) {
       return h(
         NTag,
@@ -164,7 +203,10 @@ const columns: DataTableColumns<Task> = [
             userSelect: 'none',
             transition: 'all 0.2s ease'
           },
-          onClick: () => taskStore.toggleTaskStatus(row)
+          onClick: async () => {
+            await taskStore.toggleTaskStatus(row);
+            loadServerTasks();
+          }
         },
         {
           default: () => (row.completed ? '✓ Completed' : '○ In Progress')
@@ -176,8 +218,7 @@ const columns: DataTableColumns<Task> = [
     title: 'Created At',
     key: 'created_at',
     defaultSortOrder: 'descend',
-    sorter: (row1, row2) =>
-      new Date(row1.created_at).getTime() - new Date(row2.created_at).getTime(),
+    sorter: true,
     render(row) {
       return new Date(row.created_at).toLocaleDateString('en-US', {
         day: '2-digit',
@@ -205,11 +246,11 @@ const columns: DataTableColumns<Task> = [
 ];
 
 onMounted(() => {
-  fetchTasks();
+  loadServerTasks();
 });
 
 defineExpose({
-  fetchTasks
+  fetchTasks: loadServerTasks
 });
 </script>
 
@@ -223,47 +264,51 @@ defineExpose({
         class="search-input"
       />
 
-      <div v-if="checkedRowKeys.length > 0" class="bulk-actions">
-        <span class="selected-count"> Selected {{ checkedRowKeys.length }} task(s) </span>
-        <NSpace align="center">
-          <NButton size="small" type="success" secondary @click="handleBulkToggleStatus(true)">
-            Mark Done
-          </NButton>
-          <NButton size="small" type="warning" secondary @click="handleBulkToggleStatus(false)">
-            Mark Pending
-          </NButton>
-          <NButton size="small" type="error" @click="isBulkDeleteModalOpen = true">
-            Delete Selected
-          </NButton>
-        </NSpace>
-      </div>
+      <div class="toolbar-actions">
+        <Transition name="fade">
+          <div v-if="checkedRowKeys.length > 0" class="bulk-actions">
+            <span class="selected-count"> Selected {{ checkedRowKeys.length }} task(s) </span>
+            <NSpace align="center">
+              <NButton size="small" type="primary" secondary @click="handleSmartBulkToggle">
+                Toggle Status
+              </NButton>
+              <NButton size="small" type="error" @click="isBulkDeleteModalOpen = true">
+                Delete Selected
+              </NButton>
+            </NSpace>
+          </div>
+        </Transition>
 
-      <div class="header-actions">
-        <BaseButton variant="primary" @click="isCreateModalOpen = true"> + Create Task </BaseButton>
+        <div class="header-actions">
+          <BaseButton variant="primary" @click="isCreateModalOpen = true">
+            + Create Task
+          </BaseButton>
+        </div>
       </div>
     </div>
 
     <div v-if="error" class="error-banner">
       <p>{{ error }}</p>
-      <NButton type="primary" size="small" @click="fetchTasks">Retry</NButton>
+      <NButton type="primary" size="small" @click="loadServerTasks">Retry</NButton>
     </div>
 
     <NDataTable
       v-else
+      remote
       :loading="isLoading"
       :columns="columns"
-      :data="filteredTasks"
+      :data="tasks"
       :pagination="pagination"
       :row-key="(row) => row.id"
       :checked-row-keys="checkedRowKeys"
       @update:checked-row-keys="handleCheck"
+      @update:sorter="handleSorterChange"
     >
       <template #empty>
         <NEmpty description="No tasks found" />
       </template>
     </NDataTable>
 
-    <!-- Modals -->
     <CreateTaskModal
       :open="isCreateModalOpen"
       :loading="isActionLoading"
@@ -309,11 +354,19 @@ defineExpose({
   align-items: center;
   gap: 16px;
   margin-bottom: 16px;
-  flex-wrap: wrap;
+  min-height: 40px;
 }
 
 .search-input {
   max-width: 360px;
+}
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+  height: 40px;
 }
 
 .bulk-actions {
@@ -321,7 +374,9 @@ defineExpose({
   align-items: center;
   gap: 12px;
   background-color: rgba(255, 255, 255, 0.05);
-  padding: 6px 12px;
+  padding: 0 12px;
+  height: 40px;
+  box-sizing: border-box;
   border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -330,6 +385,7 @@ defineExpose({
   font-size: 0.875rem;
   font-weight: 600;
   color: #1ed760;
+  white-space: nowrap;
 }
 
 .error-banner {
@@ -343,5 +399,18 @@ defineExpose({
   flex-direction: column;
   align-items: center;
   gap: 12px;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateX(10px);
 }
 </style>

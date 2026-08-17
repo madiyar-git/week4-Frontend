@@ -2,13 +2,14 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import type { DataTableRowKey } from 'naive-ui';
 import type { Task } from '@/types/task';
-import { taskApi, type CreateTaskDto, type UpdateTaskDto } from '@/api/tasks';
+import { taskApi, type CreateTaskDto, type UpdateTaskDto, type TaskQueryParams } from '@/api/tasks';
 import { useNotify } from '@/composables/useNotify';
 import { formatErrorMessage } from '@/api/errorHandler';
 
 export const useTaskStore = defineStore('tasks', () => {
   const notify = useNotify();
   const tasks = ref<Task[]>([]);
+  const totalCount = ref<number>(0);
   const isLoading = ref<boolean>(false);
   const error = ref<string | null>(null);
 
@@ -25,12 +26,13 @@ export const useTaskStore = defineStore('tasks', () => {
     });
   });
 
-  async function fetchTasks(): Promise<void> {
+  async function fetchTasks(params?: TaskQueryParams): Promise<void> {
     isLoading.value = true;
     error.value = null;
     try {
-      const response = await taskApi.getAll();
-      tasks.value = response.data;
+      const response = await taskApi.getAll(params);
+      tasks.value = response.data.results;
+      totalCount.value = response.data.count;
     } catch (err) {
       const message = formatErrorMessage(err);
       error.value = message;
@@ -43,7 +45,6 @@ export const useTaskStore = defineStore('tasks', () => {
   async function createTask(payload: CreateTaskDto): Promise<void> {
     try {
       const response = await taskApi.create(payload);
-
       tasks.value = [response.data, ...tasks.value];
       notify.success('Task created successfully!');
     } catch (err) {
@@ -131,6 +132,7 @@ export const useTaskStore = defineStore('tasks', () => {
 
   function reset(): void {
     tasks.value = [];
+    totalCount.value = 0;
     error.value = null;
     isLoading.value = false;
     searchQuery.value = '';
@@ -139,6 +141,7 @@ export const useTaskStore = defineStore('tasks', () => {
 
   return {
     tasks,
+    totalCount,
     isLoading,
     error,
     searchQuery,
