@@ -3,13 +3,7 @@ import { RouterLink, RouterView, useRouter } from 'vue-router';
 import { useAuthStore } from './stores/auth';
 import { storeToRefs } from 'pinia';
 import { useTaskStore } from './stores/tasks';
-import {
-  NConfigProvider,
-  NGlobalStyle,
-  NMessageProvider,
-  darkTheme,
-  type GlobalThemeOverrides
-} from 'naive-ui';
+import { NConfigProvider, NGlobalStyle, darkTheme, type GlobalThemeOverrides } from 'naive-ui';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -42,41 +36,34 @@ const themeOverrides: GlobalThemeOverrides = {
   }
 };
 </script>
+
 <template>
   <NConfigProvider :theme="darkTheme" :theme-overrides="themeOverrides">
     <NGlobalStyle />
 
-    <NMessageProvider :max="3" :duration="3000" placement="top-right">
-      <main class="app-main">
-        <header class="app-header">
-          <h1>Task Manager</h1>
+    <main class="app-main">
+      <header class="app-header">
+        <h1>Task Manager</h1>
 
-          <nav class="nav-bar">
-            <RouterLink v-if="isAuthenticated" to="/tasks" class="nav-link"> Tasks </RouterLink>
+        <nav class="nav-bar">
+          <RouterLink v-if="isAuthenticated" to="/tasks" class="nav-link"> Tasks </RouterLink>
 
-            <RouterLink v-if="!isAuthenticated" to="/login" class="nav-link"> Login </RouterLink>
-            <RouterLink v-if="!isAuthenticated" to="/register" class="nav-link">
-              Registration
-            </RouterLink>
+          <RouterLink v-if="!isAuthenticated" to="/login" class="nav-link"> Login </RouterLink>
+          <RouterLink v-if="!isAuthenticated" to="/register" class="nav-link">
+            Registration
+          </RouterLink>
 
-            <div v-if="isAuthenticated" class="user-menu">
-              <span class="username-display">Hi, {{ username }}</span>
-              <n-button
-                type="error"
-                size="small"
-                quaternary
-                class="logout-btn"
-                @click="handleLogout"
-              >
-                Log out
-              </n-button>
-            </div>
-          </nav>
-        </header>
+          <div v-if="isAuthenticated" class="user-menu">
+            <span class="username-display">Hi, {{ username }}</span>
+            <n-button type="error" size="small" quaternary class="logout-btn" @click="handleLogout">
+              Log out
+            </n-button>
+          </div>
+        </nav>
+      </header>
 
-        <RouterView />
-      </main>
-    </NMessageProvider>
+      <RouterView />
+    </main>
   </NConfigProvider>
 </template>
 
