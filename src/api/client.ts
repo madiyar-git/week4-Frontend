@@ -86,13 +86,21 @@ const processQueue = (error: unknown | null = null): void => {
   queue = [];
 };
 
+//XXX Перехватчик ответов из сервера
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
+    const isLoginRequest =
+      originalRequest?.url?.includes('/token/') && !originalRequest.url.includes('/refresh/') //XXX Игнор авторизации
 
-    if (!error.response || error.response.status !== 401 || originalRequest?._retry) {
-      return Promise.reject(error);
+    if (
+      error.response?.status !== 401 ||
+      !originalRequest ||
+      originalRequest._retry ||
+      isLoginRequest
+    ) {
+      return Promise.reject(error)
     }
 
     const isAuthEndpoint =
