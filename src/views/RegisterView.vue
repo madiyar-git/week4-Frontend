@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import { useRouter } from 'vue-router';
+import { useRouter } from 'vue-router'
+import BaseButton from '@/components/base/BaseButton.vue'
+import BaseInput from '@/components/base/BaseInput.vue'
 import type { AxiosError } from 'axios'
 
 interface DjangoRegisterErrorData {
@@ -19,113 +21,130 @@ const password_confirm = ref<string>('')
 const isLoading = ref<boolean>(false)
 const localError = ref<string | null>(null)
 
-// Разрешены только латинские буквы, цифры и нижнее подчеркивание
+//XXX Разрешены только латинские буквы, цифры и нижнее подчеркивание
 const USERNAME_REGEX = /^[a-zA-Z0-9_]+$/
 
-const doPasswordsMatch = computed<boolean>(() =>{
-    return password.value === password_confirm.value
+const doPasswordsMatch = computed<boolean>(() => {
+  return password.value === password_confirm.value
 })
 
-function validateForm(): string[]{
-    const errorList: string[] = []
-    const trimmedUsername = username.value.trim()
+function validateForm(): string[] {
+  const errorList: string[] = []
+  const trimmedUsername = username.value.trim()
 
-    if ( trimmedUsername.length < 3 || trimmedUsername.length > 30){
-        errorList.push("Username must have more than 3 and less than 30 ")
-    }
-    if (!USERNAME_REGEX.test(trimmedUsername) && trimmedUsername.length > 3){
-        errorList.push("Username must have latin letters, digits and '_' symbol ")
-    }
+  if (trimmedUsername.length < 3 || trimmedUsername.length > 30) {
+    errorList.push('Username must have more than 3 and less than 30 ')
+  }
+  if (!USERNAME_REGEX.test(trimmedUsername) && trimmedUsername.length > 3) {
+    errorList.push("Username must have latin letters, digits and '_' symbol ")
+  }
 
-    if (password.value.length < 6){
-        errorList.push("Password must have at least 6 symbols")
-    }
+  if (password.value.length < 6) {
+    errorList.push('Password must have at least 6 symbols')
+  }
 
-    if (!doPasswordsMatch.value && password_confirm.value.length > 0){
-        errorList.push("Passwords not matching")
-    }
+  if (!doPasswordsMatch.value && password_confirm.value.length > 0) {
+    errorList.push('Passwords not matching')
+  }
 
-    return errorList
-} 
+  return errorList
+}
 
-const formErrors = computed<string[]>(() =>{
-    if (!username.value && !password.value && !password_confirm.value) return []
-    return validateForm()
+const formErrors = computed<string[]>(() => {
+  if (!username.value && !password.value && !password_confirm.value) return []
+  return validateForm()
 })
 
 const isFormValid = computed<boolean>(() => {
-    const isFilled = !!username.value && !!password.value && !!password_confirm.value
-    return isFilled && validateForm().length === 0
+  const isFilled = !!username.value && !!password.value && !!password_confirm.value
+  return isFilled && validateForm().length === 0
 })
 
 async function handleSubmit() {
-    if(!isFormValid.value || isLoading.value) return
-        
-    isLoading.value = true
-    localError.value = null
-    try {
-        await auth.register(username.value, password.value)
-        router.push(
-            { 
-                name: 'login',
-                query: { registered: '1' }
-            })
-    } catch (err) {
-        const axiosError = err as AxiosError<DjangoRegisterErrorData>
-        const backendUsernameError = axiosError.response?.data?.username?.[0]
-        if (backendUsernameError) {
-            localError.value = backendUsernameError
-        } else {
-            localError.value = axiosError.response?.data?.detail || 'Registration error'
-        }
+  if (!isFormValid.value || isLoading.value) return
 
-        } finally {
-        isLoading.value = false
+  isLoading.value = true
+  localError.value = null
+  try {
+    await auth.register(username.value, password.value)
+    router.push({
+      name: 'login',
+      query: { registered: '1' },
+    })
+  } catch (err) {
+    const axiosError = err as AxiosError<DjangoRegisterErrorData>
+    const backendUsernameError = axiosError.response?.data?.username?.[0]
+    if (backendUsernameError) {
+      localError.value = backendUsernameError
+    } else {
+      localError.value = axiosError.response?.data?.detail || 'Registration error'
     }
+  } finally {
+    isLoading.value = false
+  }
 }
-
 </script>
 
 <template>
-    <div class="register-container">
-        <form @submit.prevent="handleSubmit" class="register-form">
-            <h2>Create account</h2>
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input id="username" v-model="username" type="text" 
-                placeholder="Latin letter, digits and '_' symbol" 
-                :disabled="isLoading" autocomplete="username">
-            </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input id="password" v-model="password" type="password" 
-                placeholder="Enter password" 
-                :disabled="isLoading" autocomplete="password">
-            </div>
-            <div class="form-group">
-                <label for="password_confirm">Confirm password </label>
-                <input id="password_confirm" v-model="password_confirm" type="password" 
-                placeholder="Confirm password" 
-                :disabled="isLoading" autocomplete="new-password">
-            </div>
-            <div v-if="localError" class="error-box validation-error">
-                {{ localError }}
-            </div>
-                <div v-if="formErrors.length > 0" class="error-box validation-box">
-                    <ul class="errors-list">
-                    <li v-for="(error, index) in formErrors" :key="index">
-                        {{ error }}
-                    </li>
-                    </ul>
-                </div>            
-
-                <button type="submit" class="submit-btn" :disabled="!isFormValid || isLoading">
-                    <span v-if="isLoading" class="btn-spinner"></span>
-                    <span v-else>Sign up</span>
-                </button>
-        </form>
-    </div>
+  <div class="register-container">
+    <form @submit.prevent="handleSubmit" class="register-form">
+      <h2>Create account</h2>
+      <div class="form-group">
+        <!-- [x]инпут -->
+        <BaseInput
+          v-model="username"
+          label="Username"
+          type="text"
+          placeholder="Latin letter, digits and '_' symbol"
+          :disabled="isLoading"
+          autocomplete="username"
+        />
+      </div>
+      <div class="form-group">
+        <!-- [x]инпут -->
+        <BaseInput
+          v-model="password"
+          label="Password"
+          type="password"
+          placeholder="Enter your password"
+          :disabled="isLoading"
+        />
+      </div>
+      <div class="form-group">
+        <!-- [x]инпут -->
+        <BaseInput
+          v-model="password_confirm"
+          label="Confirm password"
+          type="password"
+          placeholder="Repeat your password"
+          :disabled="isLoading"
+        />
+      </div>
+      <div v-if="localError" class="error-box validation-error">
+        {{ localError }}
+      </div>
+      <div v-if="formErrors.length > 0" class="error-box validation-box">
+        <ul class="errors-list">
+          <li v-for="(error, index) in formErrors" :key="index">
+            {{ error }}
+          </li>
+        </ul>
+      </div>
+      <!-- [x] Кнопка -->
+      <BaseButton
+        type="submit"
+        variant="primary"
+        size="lg"
+        :disabled="!isFormValid || isLoading"
+        :loading="isLoading"
+        style="width: 100%"
+      >
+        Sign Up
+      </BaseButton>
+    </form>
+  </div>
 </template>
+
 <style scoped>
 .register-container {
   display: flex;
@@ -173,7 +192,9 @@ input {
   border-radius: 4px;
   font-size: 0.95rem;
   box-sizing: border-box;
-  transition: border-color 0.2s ease, background-color 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
 }
 
 input:focus {
@@ -231,7 +252,10 @@ input:disabled {
   align-items: center;
   justify-content: center;
   margin-top: 10px;
-  transition: transform 0.2s ease, background-color 0.2s ease, opacity 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease,
+    opacity 0.2s ease;
 }
 
 .submit-btn:hover:not(:disabled) {
@@ -261,7 +285,11 @@ input:disabled {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 </style>

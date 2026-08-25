@@ -1,61 +1,84 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { Task } from "../types/task";
-import TaskCard from "./TaskCard.vue"
+import type { Task } from '../types/task'
+import BaseButton from '@/components/base/BaseButton.vue'
+import TaskCard from './TaskCard.vue'
 
-
-const tasks = defineModel<Task[]>({required: true})
+const tasks = defineModel<Task[]>({ required: true })
 
 defineEmits<{
-  'delete': [TaskId: number]
-  'update': [taskId: number, fields: Partial<Task>]
+  delete: [TaskId: number]
+  update: [taskId: number, fields: Partial<Task>]
   'bulk-action': [action: 'toggle_all' | 'clear_completed' | 'clear_all']
-  'create-task': []
 }>()
 
-const completedCount = computed(() =>{
-    return tasks.value.filter(t => t.completed).length
+const completedCount = computed(() => {
+  return tasks.value.filter((t) => t.completed).length
 })
-
 </script>
 
 <template>
-    <div class="task-list-container">
-        <div class="stats-panel">
-            <div class="stats-text">
-                Tasks: {{ tasks.length }} (completed: {{ completedCount }})
-            </div>
-            
-            <div class="bulk-actions" v-if="tasks.length > 0">
-                <button @click="$emit('bulk-action', 'toggle_all')" class="bulk-btn success">
-                      Mark all
-                </button>
-                
-                <button @click="$emit('bulk-action', 'clear_completed')" class="bulk-btn warning">
-                    Delete done tasks
-                </button>
-                
-                <button @click="$emit('bulk-action', 'clear_all')" class="bulk-btn danger">
-                    Delete all
-                </button>
-            </div>
-        </div>
+  <div class="task-list-container">
+    <div class="stats-panel">
+      <div class="stats-text">Tasks: {{ tasks.length }} (completed: {{ completedCount }})</div>
 
-        <button @click="$emit('create-task')" class="create-task-btn">
-            <span class="plus-icon">+</span> Добавить задачу
-        </button>
-
-        <div v-if="tasks.length > 0" class="task-list">
-            <TaskCard v-for="(task,index) in tasks" :key="task.id" v-model="tasks[index]!" @delete="$emit('delete', $event)" @update="(id, fields) => $emit('update',id, fields)"/>
-        </div>
-        <p v-else class="empty-state">No tasks yet</p>
+      <div class="bulk-actions" v-if="tasks.length > 0">
+        <!-- [x] Кнопка -->
+        <BaseButton
+          type="submit"
+          variant="primary"
+          size="sm"
+          :disabled="false"
+          :loading="false"
+          @click="$emit('bulk-action', 'toggle_all')"
+          class="bulk-btn success"
+        >
+          Mark all
+        </BaseButton>
+        <!-- [x] Кнопка -->
+        <BaseButton
+          type="submit"
+          variant="secondary"
+          size="sm"
+          :disabled="false"
+          :loading="false"
+          @click="$emit('bulk-action', 'clear_completed')"
+          class="bulk-btn warning"
+        >
+          Delete done tasks
+        </BaseButton>
+        <!-- [x] Кнопка -->
+        <BaseButton
+          type="submit"
+          variant="secondary"
+          size="sm"
+          :disabled="false"
+          :loading="false"
+          @click="$emit('bulk-action', 'clear_all')"
+          class="bulk-btn danger"
+        >
+          Delete all
+        </BaseButton>
+        
+      </div>
     </div>
+    <div v-if="tasks.length > 0" class="task-list">
+      <TaskCard
+        v-for="(task, index) in tasks"
+        :key="task.id"
+        v-model="tasks[index]!"
+        @delete="$emit('delete', $event)"
+        @update="(id, fields) => $emit('update', id, fields)"
+      />
+    </div>
+    <p v-else class="empty-state">No tasks yet</p>
+  </div>
 </template>
 
 <style scoped>
 .task-list-container {
   width: 100%;
-  max-width: 450px; 
+  max-width: 450px;
   margin: 0 auto;
 }
 
@@ -100,52 +123,25 @@ const completedCount = computed(() =>{
 }
 
 .bulk-btn.success:hover {
-  background-color: #1db954; 
+  background-color: #1db954;
   border-color: #1db954;
   color: #000000;
 }
 
 .bulk-btn.warning:hover {
-  background-color: #fbd38d; 
+  background-color: #fbd38d;
   border-color: #fbd38d;
   color: #000000;
 }
 
 .bulk-btn.danger:hover {
-  background-color: #ff4d4f; 
+  background-color: #ff4d4f;
   border-color: #ff4d4f;
   color: #ffffff;
 }
 
 .bulk-btn:active {
   transform: scale(0.95);
-}
-
-.create-task-btn {
-  width: 100%;
-  background-color: #1db954;
-  color: #000000;
-  border: none;
-  padding: 14px;
-  border-radius: 25px; 
-  font-size: 1rem;
-  font-weight: bold;
-  cursor: pointer;
-  margin-bottom: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: transform 0.2s ease, background-color 0.2s ease;
-}
-
-.create-task-btn:hover {
-  background-color: #1ed760; 
-  transform: scale(1.02); 
-}
-
-.create-task-btn:active {
-  transform: scale(0.98);
 }
 
 .plus-icon {
@@ -156,7 +152,7 @@ const completedCount = computed(() =>{
 .task-list {
   display: flex;
   flex-direction: column;
-  gap: 16px; 
+  gap: 16px;
 }
 
 .empty-state {
