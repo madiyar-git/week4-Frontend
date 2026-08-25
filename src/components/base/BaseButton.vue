@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed } from 'vue';
 
 interface Props {
-  variant?: 'primary' | 'secondary' | 'danger'
-  size?: 'sm' | 'md' | 'lg'
-  type?: 'button' | 'reset' | 'submit'
-  loading?: boolean
-  disabled?: boolean
+  variant?: 'primary' | 'secondary' | 'danger';
+  size?: 'sm' | 'md' | 'lg';
+  type?: 'button' | 'reset' | 'submit';
+  loading?: boolean;
+  disabled?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -14,17 +14,17 @@ const props = withDefaults(defineProps<Props>(), {
   size: 'sm',
   type: 'button',
   loading: false,
-  disabled: false,
-})
+  disabled: false
+});
 
 const buttonClasses = computed(() => {
   return [
     'base-button',
     `base-button--${props.variant}`,
     `base-button--${props.size}`,
-    { 'base-button--loading': props.loading },
-  ]
-})
+    { 'base-button--loading': props.loading }
+  ];
+});
 </script>
 
 <template>
@@ -43,11 +43,11 @@ const buttonClasses = computed(() => {
   align-items: center;
   justify-content: center;
   font-family: inherit;
-  font-weight: 700; 
-  border-radius: 500px; 
+  font-weight: 700;
+  border-radius: 50px;
   border: 1px solid transparent;
   cursor: pointer;
-  letter-spacing: 0.5px; 
+  letter-spacing: 0.5px;
 
   transition:
     background-color 0.2s ease,
@@ -98,7 +98,7 @@ const buttonClasses = computed(() => {
 
 .base-button--danger {
   background-color: #e91429;
-  color: #ffffff;
+  color: #0c0c0c;
 }
 .base-button--danger:not(:disabled):hover {
   background-color: #f12439;
@@ -130,8 +130,8 @@ const buttonClasses = computed(() => {
   position: absolute;
   width: 1.2em;
   height: 1.2em;
-  border: 2px solid rgba(0, 0, 0, 0.1); 
-  border-top-color: currentColor; 
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-top-color: currentColor;
   border-radius: 50%;
   animation: button-spin 0.6s linear infinite;
 }

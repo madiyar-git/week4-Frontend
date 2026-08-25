@@ -1,188 +1,350 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
-import { useTaskStore } from '@/stores/tasks'
-import { storeToRefs } from 'pinia'
-import type { Task } from '../types/task'
-import BaseButton from '@/components/base/BaseButton.vue'
-import BaseInput from '@/components/base/BaseInput.vue'
-import TaskList from '../components/TaskList.vue'
+import { onMounted, ref, computed, watch } from 'vue';
+import { useTaskStore } from '@/stores/tasks';
+import { storeToRefs } from 'pinia';
+import { useApi } from '@/composables/useApi';
+import type { Task } from '../types/task';
+import BaseButton from '@/components/base/BaseButton.vue';
+import BaseInput from '@/components/base/BaseInput.vue';
+import BaseCard from '@/components/base/BaseCard.vue';
+import TaskList from '../components/TaskList.vue';
+import { usePagination } from '@/composables/usePagination';
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal.vue';
+import { useSaveInClipBoard } from '@/composables/useSaveInClipBoard.ts';
+import { useForm, type Errors } from '@/composables/useForm.ts';
+import { taskApi } from '@/api/tasks.ts';
+import { type Result, isError } from '@/types/result.ts';
+import EditTaskModal from '@/components/EditTaskModal.vue';
 
-const tasksStore = useTaskStore()
-const { tasks, isLoading, error } = storeToRefs(tasksStore)
+interface TaskFormFields {
+  title: string;
+  description: string;
+  priority: 'low' | 'medium' | 'high';
+}
 
-const newTitle = ref<string>('')
-const newDescription = ref<string>('')
-const newPriority = ref<'low' | 'medium' | 'high'>('medium')
-const isSubmitting = ref<boolean>(false)
-const formError = ref<string | null>(null)
+const validateTaskForm = (values: TaskFormFields): Errors<TaskFormFields> => {
+  const errors: Errors<TaskFormFields> = {};
 
-const isFormValid = computed<boolean>(() => {
-  return newTitle.value.trim().length >= 3
-})
+  if (!values.title.trim()) {
+    errors.title = 'Title is required';
+  } else if (values.title.trim().length < 3) {
+    errors.title = 'Title must be at least 3 symbols';
+  }
+  return errors;
+};
 
-async function handleCreateTask(): Promise<void> {
-  if (!isFormValid.value || isSubmitting.value) return
+const tasksStore = useTaskStore();
+const { tasks } = storeToRefs(tasksStore);
 
-  isSubmitting.value = true
-  formError.value = null
+const {
+  loading: isFetchLoading,
+  error: fetchError,
+  execute: fetchExecute
+} = useApi<Result<Task[]>>();
+const { loading: isCreateLoading, error: createError, execute: createExecute } = useApi<Task>();
+const { loading: isActionLoading, error: actionError, execute: actionExecute } = useApi<unknown>();
 
-  try {
-    await tasksStore.createTask({
-      title: newTitle.value.trim(),
-      description: newDescription.value.trim(),
-      priority: newPriority.value,
-      completed: false,
-    })
+const searchInput = ref<string>('');
 
-    newTitle.value = ''
-    newDescription.value = ''
-    newPriority.value = 'medium'
-  } catch (err: unknown) {
-    console.error(err)
-    const errorObject = err as Error
-    formError.value = errorObject.message || 'Failed to create task.'
-  } finally {
-    isSubmitting.value = false
+const filteredTasks = computed(() => {
+  const query = searchInput.value.trim().toLowerCase();
+  if (!query) return tasks.value;
+
+  return tasks.value.filter((task) => task.title.toLowerCase().includes(query));
+});
+
+const { pagedItems, currentPage, totalPages, next, prev } = usePagination(filteredTasks, 5);
+
+watch(searchInput, () => {
+  currentPage.value = 1;
+});
+
+const isEditModalOpen = ref<boolean>(false);
+const taskToEdit = ref<Task | null>(null);
+
+function handleEditTask(task: Task): void {
+  taskToEdit.value = task;
+  isEditModalOpen.value = true;
+}
+
+async function confirmEditTask(payload: Partial<Task>): Promise<void> {
+  if (!taskToEdit.value) return;
+  const targetId = taskToEdit.value.id;
+
+  await actionExecute(() => taskApi.update(targetId, payload));
+
+  if (!actionError.value) {
+    const index = tasks.value.findIndex((t) => t.id === targetId);
+    if (index !== -1) {
+      tasks.value[index] = { ...tasks.value[index], ...payload } as Task;
+    }
+    closeEditModal();
+  } else {
+    alert(`Failed to update task: ${actionError.value}`);
   }
 }
+
+function closeEditModal(): void {
+  isEditModalOpen.value = false;
+  taskToEdit.value = null;
+}
+
+const { values, errors, handleSubmit, reset } = useForm<TaskFormFields>(
+  {
+    title: '',
+    description: '',
+    priority: 'medium'
+  },
+  validateTaskForm
+);
+const getErrorString = (err: string | string[] | null | undefined): string | undefined => {
+  if (!err) return undefined;
+  return Array.isArray(err) ? err[0] : err;
+};
+
+const isDeleteModalOpen = ref<boolean>(false);
+const taskToDelete = ref<Task | null>(null);
+
+const isGlobalLoading = computed(
+  () => isFetchLoading.value || isCreateLoading.value || isActionLoading.value
+);
+
+async function loadTasks(): Promise<void> {
+  const result = await fetchExecute(async () => {
+    const response = await taskApi.getAll();
+    return { ok: true, data: response.data };
+  });
+
+  if (result) {
+    if (isError(result)) {
+      alert(result.error);
+    } else {
+      tasks.value = result.data;
+    }
+  }
+}
+
+const onSubmit = handleSubmit(async (fromData) => {
+  if (isGlobalLoading.value) return;
+  const result = await createExecute(async () => {
+    const res = await taskApi.create({
+      title: fromData.title.trim(),
+      description: fromData.description.trim(),
+      priority: fromData.priority
+    });
+    return res.data;
+  });
+
+  if (result) {
+    tasks.value.unshift(result);
+    reset();
+    currentPage.value = 1;
+  }
+});
+
 async function handleToggleCompleted(id: number, fields: Partial<Task>): Promise<void> {
-  try {
-    await tasksStore.updateTask(id, fields)
-  } catch (err: unknown) {
-    console.error(err)
-    alert('Failed to update task status.')
+  await actionExecute(() => taskApi.update(id, fields));
+
+  if (actionError.value) {
+    const taskIndex = tasks.value.findIndex((t) => t.id === id);
+
+    const targetTask = tasks.value[taskIndex];
+
+    if (targetTask && fields.completed !== undefined) {
+      targetTask.completed = !fields.completed;
+    }
+
+    alert(`Failed to update task status: ${actionError.value}`);
   }
 }
 
-async function handleDeleteTask(id: number): Promise<void> {
-  try {
-    await tasksStore.deleteTask(id)
-  } catch (err: unknown) {
-    console.error(err)
-    alert('Failed to delete task.')
+function handleDeleteTask(id: number): void {
+  const foundTask = tasks.value.find((t) => t.id === id);
+  if (foundTask) {
+    taskToDelete.value = foundTask;
+    isDeleteModalOpen.value = true;
   }
+}
+
+async function confirmDeleteTask(): Promise<void> {
+  if (!taskToDelete.value) return;
+
+  const targetId = taskToDelete.value.id;
+
+  await actionExecute(() => taskApi.delete(targetId));
+
+  if (!actionError.value) {
+    tasks.value = tasks.value.filter((t) => t.id !== targetId);
+    closeDeleteModal();
+  } else {
+    alert(`Delete error: ${actionError.value}`);
+  }
+}
+
+function closeDeleteModal(): void {
+  isDeleteModalOpen.value = false;
+  taskToDelete.value = null;
 }
 
 async function bulkAction(
-  actionName: 'toggle_all' | 'clear_completed' | 'clear_all',
+  actionName: 'toggle_all' | 'clear_completed' | 'clear_all'
 ): Promise<void> {
   if (actionName === 'toggle_all') {
-    const areAllCompleted = tasks.value.every((t) => t.completed)
-    const newStatus = !areAllCompleted
-    const promises = tasks.value.map((t) => tasksStore.updateTask(t.id, { completed: newStatus }))
+    const areAllCompleted = tasks.value.every((t) => t.completed);
+    const newStatus = !areAllCompleted;
 
-    try {
-      await Promise.all(promises)
-    } catch (err: unknown) {
-      console.error(err)
-      alert('Failed to update all tasks.')
-    }
+    const promises = tasks.value.map((t) =>
+      actionExecute(() => taskApi.update(t.id, { completed: newStatus }))
+    );
+
+    await Promise.all(promises);
+    await loadTasks();
   } else if (actionName === 'clear_completed') {
-    const completedTasks = tasks.value.filter((t) => t.completed)
-    try {
-      const promises = completedTasks.map((t) => tasksStore.deleteTask(t.id))
-      await Promise.all(promises)
-    } catch (err: unknown) {
-      console.error(err)
-      alert('Failed to clear completed tasks.')
-    }
+    const completedTasks = tasks.value.filter((t) => t.completed);
+    const promises = completedTasks.map((t) => actionExecute(() => taskApi.delete(t.id)));
+
+    await Promise.all(promises);
+    await loadTasks();
   } else if (actionName === 'clear_all') {
-    try {
-      const promises = tasks.value.map((t) => tasksStore.deleteTask(t.id))
-      await Promise.all(promises)
-    } catch (err: unknown) {
-      console.error(err)
-      alert('Failed to clear all tasks.')
-    }
+    const promises = tasks.value.map((t) => actionExecute(() => taskApi.delete(t.id)));
+
+    await Promise.all(promises);
+    await loadTasks();
   }
 }
 
 onMounted(() => {
-  tasksStore.fetchTasks()
-})
+  loadTasks();
+});
 </script>
 
 <template>
   <main class="app-main">
     <div class="tasks-container">
-      <h2>My Tasks</h2>
+      <h2 @click="useSaveInClipBoard('My Tasks')">My Tasks</h2>
+      <div class="tasks-page">
+        <BaseCard class="task-form-card">
+          <template #header>
+            <h3>New Task</h3>
+          </template>
 
-      <form @submit.prevent="handleCreateTask" class="create-task-form">
-        <h3>New Task</h3>
+          <form @submit.prevent="onSubmit" class="create-task-form">
+            <div class="form-group">
+              <BaseInput
+                v-model="values.title"
+                type="text"
+                label="Title"
+                placeholder="Task title (min 3 symbols)..."
+                :disabled="isGlobalLoading"
+                :error="getErrorString(errors.title) || createError || undefined"
+                required
+              />
+            </div>
 
-        <div class="form-group">
-          <BaseInput
-            v-model="newTitle"
-            type="text"
-            placeholder="Task title (min 3 symbols)..."
-            :disabled="isSubmitting"
-          />
+            <div class="form-group">
+              <BaseInput
+                v-model="values.description"
+                label="Description"
+                placeholder="Description (optional)..."
+                :disabled="isGlobalLoading"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="priority">Priority</label>
+              <select
+                id="priority"
+                v-model="values.priority"
+                :class="values.priority"
+                :disabled="isGlobalLoading"
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+
+            <BaseButton
+              type="submit"
+              variant="primary"
+              size="lg"
+              :disabled="isGlobalLoading"
+              :loading="isCreateLoading"
+              style="width: 100%; margin-top: 12px"
+            >
+              Create New Task
+            </BaseButton>
+          </form>
+        </BaseCard>
+
+        <hr class="divider" />
+        <BaseInput v-model="searchInput" type="text" placeholder="Search" />
+        <div v-if="isFetchLoading" class="spinner-container">
+          <div class="spinner"></div>
+          <p>Loading tasks from server...</p>
         </div>
 
-        <div class="form-group">
-          <BaseInput
-            v-model="newDescription"
-            placeholder="Description (optional)..."
-            :disabled="isSubmitting"
-          />
+        <div v-else-if="fetchError" class="error-banner">
+          <p>Error: {{ fetchError }}</p>
+          <BaseButton
+            type="button"
+            variant="secondary"
+            size="sm"
+            style="width: 60%"
+            @click="loadTasks"
+          >
+            Retry
+          </BaseButton>
         </div>
 
-        <div class="form-group">
-          <label for="priority">Priority: </label>
-          <select id="priority" v-model="newPriority" :class="newPriority" :disabled="isSubmitting">
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-          </select>
+        <p v-if="!isFetchLoading && tasks.length === 0" class="empty-text">
+          No tasks found. Create your first task!
+        </p>
+
+        <TaskList
+          v-else-if="tasks.length > 0"
+          v-model="pagedItems"
+          @delete="handleDeleteTask"
+          @edit="handleEditTask"
+          @update="handleToggleCompleted"
+          @bulk-action="bulkAction"
+        />
+        <EditTaskModal
+          :open="isEditModalOpen"
+          :task="taskToEdit"
+          :loading="isActionLoading"
+          @close="closeEditModal"
+          @submit="confirmEditTask"
+        />
+        <div class="pagination-controls">
+          <BaseButton
+            variant="secondary"
+            :disabled="currentPage === 1 || isGlobalLoading"
+            @click="prev"
+          >
+            Prev
+          </BaseButton>
+
+          <span class="pagination-indicator"> {{ currentPage }} / {{ totalPages }} </span>
+
+          <BaseButton
+            variant="secondary"
+            :disabled="currentPage === totalPages || isGlobalLoading"
+            @click="next"
+          >
+            Next
+          </BaseButton>
         </div>
-
-        <p v-if="formError" class="error-text">{{ formError }}</p>
-
-        <BaseButton
-          type="submit"
-          variant="primary"
-          size="lg"
-          :disabled="!isFormValid || isLoading"
-          :loading="isLoading"
-          style="width: 100%"
-        >
-          Create New Task
-        </BaseButton>
-      </form>
-
-      <hr class="divider" />
-
-      <div v-if="isLoading" class="spinner-container">
-        <div class="spinner"></div>
-        <p>Loading tasks from server...</p>
       </div>
-
-      <div v-else-if="error" class="error-banner">
-        <p>Error: {{ error }}</p>
-        <BaseButton
-          type="button"
-          variant="secondary"
-          size="sm"
-          style="width: 60%"
-          @click="tasksStore.fetchTasks()"
-        >
-          Retry
-        </BaseButton>
-      </div>
-
-      <p v-else-if="tasks.length === 0" class="empty-text">
-        No tasks found. Create your first task!
-      </p>
-
-      <TaskList
-        v-else
-        v-model="tasks"
-        @delete="handleDeleteTask"
-        @update="handleToggleCompleted"
-        @bulk-action="bulkAction"
-      />
     </div>
   </main>
+  <ConfirmDeleteModal
+    :open="isDeleteModalOpen"
+    :task-title="taskToDelete?.title || ''"
+    :loading="isActionLoading"
+    @close="closeDeleteModal"
+    @confirm="confirmDeleteTask"
+  />
 </template>
 
 <style scoped>
@@ -210,34 +372,38 @@ h2 {
   color: #ffffff;
 }
 
-.create-task-form {
-  background-color: #181818;
-  border: 1px solid #282828;
-  padding: 40px;
-  border-radius: 8px;
-  width: 100%;
-  box-sizing: border-box;
+.task-form-card {
   margin-bottom: 25px;
 }
 
-.create-task-form h3 {
-  margin: 0 0 20px 0;
+h3 {
+  margin: 0;
   font-size: 1.3rem;
   font-weight: 700;
   color: #1db954;
 }
 
+.create-task-form {
+  display: flex;
+  flex-direction: column;
+}
+
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
+.form-group:last-of-type {
+  margin-bottom: 20px;
+}
+
 label {
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 700;
   color: #ffffff;
+  text-align: left;
 }
 
 select {
@@ -268,21 +434,21 @@ select:disabled {
 }
 
 .low {
-  background-color: #1a2a3a;
-  color: #90cdf4;
-  border-color: #2b6cb0;
+  background-color: rgba(29, 185, 84, 0.12);
+  color: #1ed760;
+  border-color: rgba(29, 185, 84, 0.3);
 }
 
 .medium {
-  background-color: #3d2a1d;
-  color: #fbd38d;
-  border-color: #dd6b20;
+  background-color: rgba(255, 170, 0, 0.12);
+  color: #ffb703;
+  border-color: rgba(255, 170, 0, 0.3);
 }
 
 .high {
-  background-color: #3d1d24;
-  color: #feb2b2;
-  border-color: #e53e3e;
+  background-color: rgba(233, 20, 41, 0.15);
+  color: #ff4d5e;
+  border-color: rgba(233, 20, 41, 0.35);
 }
 
 select option {
@@ -294,18 +460,6 @@ select option {
   border: 0;
   border-top: 1px solid #282828;
   margin: 25px 0;
-}
-
-.error-text {
-  background-color: #4a1d24;
-  color: #feb2b2;
-  padding: 10px;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  margin-bottom: 20px;
-  text-align: center;
-  border: 1px solid #ff4d4f;
-  box-sizing: border-box;
 }
 
 .empty-text {
@@ -358,5 +512,20 @@ select option {
 .error-banner p {
   margin: 0;
   font-size: 0.95rem;
+}
+
+.pagination-controls {
+  display: flex;
+  margin-top: 1vw;
+  justify-content: center;
+  align-items: center;
+  gap: 1vw;
+}
+
+.pagination-indicator {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  line-height: 1;
 }
 </style>

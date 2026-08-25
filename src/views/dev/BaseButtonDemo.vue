@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import BaseButton from '@/components/base/BaseButton.vue'
+import BaseButton from '@/components/base/BaseButton.vue';
 </script>
 
 <template>
@@ -31,7 +31,7 @@ import BaseButton from '@/components/base/BaseButton.vue'
         <BaseButton size="md" variant="primary">Medium Primary</BaseButton>
         <BaseButton size="lg" variant="primary">Large Primary</BaseButton>
       </div>
-      <div class="demo-row" style="margin-top: 10px;">
+      <div class="demo-row" style="margin-top: 10px">
         <BaseButton size="sm" variant="secondary" loading>Small</BaseButton>
         <BaseButton size="md" variant="secondary" loading>Medium</BaseButton>
         <BaseButton size="lg" variant="secondary" loading>Large</BaseButton>

@@ -1,5 +1,5 @@
-import { useAuthStore } from '@/stores/auth'
-import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/stores/auth';
+import { createRouter, createWebHistory } from 'vue-router';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -11,35 +11,41 @@ const router = createRouter({
       path: '/tasks',
       name: 'tasks',
       component: () => import('@/views/TasksView.vue'),
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true }
     },
     {
       path: '/:pathMatch(.*)*',
       name: 'not-found',
-      component: () => import('@/views/NotFoundView.vue'),
+      component: () => import('@/views/NotFoundView.vue')
     },
     {
       path: '/dev/base-button',
       name: 'base-button-demo',
-      component: () => import('@/views/dev/BaseButtonDemo.vue'),
+      component: () => import('@/views/dev/BaseButtonDemo.vue')
     },
     {
       path: '/dev/base-input',
       name: 'base-input-demo',
-      component: () => import('@/views/dev/BaseInputDemo.vue'),
+      component: () => import('@/views/dev/BaseInputDemo.vue')
     },
-  ],
-})
+    {
+      path: '/tasks/stats',
+      name: 'use-api-demo',
+      component: () => import('@/views/dev/UseApiDemo.vue')
+    }
+  ]
+});
 
-router.beforeEach((to, from, next) => {
-  const auth = useAuthStore()
+router.beforeEach((to) => {
+  const auth = useAuthStore();
+
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
-    next('/login')
-  } else if ((to.path === '/login' || to.path === '/register') && auth.isAuthenticated) {
-    next('/tasks')
-  } else {
-    next()
+    return '/login';
   }
-})
 
-export default router
+  if ((to.path === '/login' || to.path === '/register') && auth.isAuthenticated) {
+    return '/tasks';
+  }
+});
+
+export default router;

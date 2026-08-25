@@ -1,63 +1,75 @@
 <script setup lang="ts">
-import { useAuthStore } from '@/stores/auth'
-import type { AxiosError } from 'axios'
-import { ref, computed, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import BaseButton from '@/components/base/BaseButton.vue'
-import BaseInput from '@/components/base/BaseInput.vue'
+import { useAuthStore } from '@/stores/auth';
+import { ref, computed, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import { useApi } from '@/composables/useApi';
+// import { useApi } from 'C:/Users/user/Desktop/week3/vue-project/src/composables/useApi';
+import BaseButton from '@/components/base/BaseButton.vue';
+import BaseInput from '@/components/base/BaseInput.vue';
+import BaseCard from '@/components/base/BaseCard.vue';
+import BaseForm from '@/components/base/BaseForm.vue';
+import { apiResponse } from '@/api/client';
 
-interface DjangoErrorData {
-  detail?: string
+const router = useRouter();
+const route = useRoute();
+const auth = useAuthStore();
+
+const username = ref<string>('');
+const password = ref<string>('');
+const successMessage = ref<string | null>(null);
+
+interface LoginResponse {
+  access: string;
+  refresh: string;
 }
 
-const router = useRouter()
-const route = useRoute()
-const auth = useAuthStore()
+const { loading: isLoading, error, execute } = useApi<LoginResponse>();
 
-const username = ref<string>('')
-const password = ref<string>('')
+const formErrors = computed(() => {
+  if (!error.value) return {};
 
-const isLoading = ref<boolean>(false)
-const error = ref<string | null>(null)
-const successMessage = ref<string | null>(null)
+  return {
+    username: 'Wrong username or password. Try Again.',
+    password: 'Wrong username or password. Try Again.'
+  };
+});
 
 const isFormValid = computed<boolean>(() => {
-  const isUsernameValid = username.value.trim().length >= 3
-  const isPasswordValid = password.value.length >= 6
-  return isUsernameValid && isPasswordValid
-})
+  const isUsernameValid = username.value.trim().length >= 3;
+  const isPasswordValid = password.value.length >= 6;
+  return isUsernameValid && isPasswordValid;
+});
 
 async function handleSubmit() {
-  if (!isFormValid.value || isLoading.value) return
+  if (!isFormValid.value || isLoading.value) return;
 
-  isLoading.value = true
-  error.value = null
+  const result = await execute(() =>
+    apiResponse<LoginResponse>({
+      method: 'POST',
+      url: 'token/',
+      data: {
+        username: username.value,
+        password: password.value
+      }
+    })
+  );
 
-  try {
-    await auth.login(username.value, password.value)
-    const redirectPath = (route.query.redirect as string) || '/tasks'
+  if (result && result.access && result.refresh) {
+    auth.login(username.value, result.access, result.refresh);
 
-    router.push(redirectPath)
-  } catch (err: unknown) {
-    const axiosError = err as AxiosError<DjangoErrorData>
-    if (axiosError.response?.data?.detail) {
-      error.value = 'Wrong username or password. Try Again.'
-    } else {
-      error.value = 'Something wrong...'
-    }
-  } finally {
-    isLoading.value = false
+    const redirectPath = (route.query.redirect as string) || '/tasks';
+    router.push(redirectPath);
   }
 }
 
 onMounted(() => {
   if (route.query.registered === '1') {
-    successMessage.value = 'You have successfully registered! Please log in now.'
+    successMessage.value = 'You have successfully registered! Please log in now.';
     setTimeout(() => {
-      router.replace({ query: {} })
-    }, 3000)
+      router.replace({ query: {} });
+    }, 3000);
   }
-})
+});
 </script>
 
 <template>
@@ -66,48 +78,41 @@ onMounted(() => {
       {{ successMessage }}
     </div>
 
-    <form @submit.prevent="handleSubmit" class="login-form">
-      <h2>Sign in</h2>
+    <BaseCard class="login-card">
+      <template #header>
+        <h2>Sign in</h2>
+      </template>
 
-      <div class="form-group">
-        <!-- [x]инпут -->
+      <BaseForm :errors="formErrors" :is-submitting="isLoading" @submit="handleSubmit">
         <BaseInput
           v-model="username"
+          name="username"
           label="Username"
           placeholder="Enter your username"
-          :disabled="isLoading"
           autocomplete="username"
           :error="error"
         />
-      </div>
 
-      <div class="form-group">
-        <!-- [x] инпут -->
         <BaseInput
           v-model="password"
+          name="password"
           label="Password"
           type="password"
           placeholder="Enter your password"
-          :disabled="isLoading"
-          :error="error"
+          autocomplete="current-password"
         />
-      </div>
-
-      <div v-if="error" class="error-message">
-        {{ error }}
-      </div>
-      <!-- [x] Кнопка -->
-      <BaseButton
-        type="submit"
-        variant="primary"
-        size="lg"
-        :disabled="!isFormValid || isLoading"
-        :loading="isLoading"
-        style="width: 100%"
-      >
-        Sign In
-      </BaseButton>
-    </form>
+        <BaseButton
+          type="submit"
+          variant="primary"
+          size="lg"
+          :disabled="!isFormValid || isLoading"
+          :loading="isLoading"
+          style="width: 100%; margin-top: 12px"
+        >
+          Sign In
+        </BaseButton>
+      </BaseForm>
+    </BaseCard>
   </div>
 </template>
 
@@ -115,142 +120,40 @@ onMounted(() => {
 .login-container {
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  min-height: 60vh;
-  width: 100%;
-}
-.success-banner {
-  background-color: #14321a;
-  border: 1px solid #1db954;
-  color: #1db954;
-  padding: 12px 24px;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  font-weight: bold;
-  margin-bottom: 20px;
-  max-width: 400px;
-  text-align: center;
-}
-
-.login-form {
-  background-color: #181818;
-  border: 1px solid #282828;
-  padding: 40px;
-  border-radius: 8px;
-  width: 100%;
-  max-width: 400px;
-  box-sizing: border-box;
+  justify-content: start;
+  padding: 40px 20px;
+  min-height: 70vh;
+  width: 22vw;
 }
 
 h2 {
-  margin: 0 0 24px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0;
   font-size: 1.75rem;
   font-weight: 700;
-  text-align: center;
   color: #ffffff;
-}
-
-.form-group {
-  margin-bottom: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-label {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #ffffff;
-}
-
-input {
-  background-color: #3e3e3e;
-  border: 1px solid #535353;
-  color: #ffffff;
-  padding: 12px;
-  border-radius: 4px;
-  font-size: 0.95rem;
-  box-sizing: border-box;
-  transition:
-    border-color 0.2s ease,
-    background-color 0.2s ease;
-}
-
-input:focus {
-  outline: none;
-  border-color: #1db954;
-  background-color: #4a4a4a;
-}
-
-input:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .error-message {
-  background-color: #4a1d24;
-  color: #feb2b2;
-  padding: 10px;
-  border-radius: 4px;
+  color: #e91429;
   font-size: 0.85rem;
-  margin-bottom: 20px;
-  text-align: center;
-  border: 1px solid #ff4d4f;
+  margin-bottom: 16px;
+  text-align: left;
 }
 
-.submit-btn {
-  width: 100%;
+.success-banner {
   background-color: #1db954;
   color: #000000;
-  border: none;
-  padding: 14px;
-  border-radius: 25px;
-  font-size: 1rem;
+  padding: 12px;
+  border-radius: 4px;
   font-weight: bold;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 10px;
-  transition:
-    transform 0.2s ease,
-    background-color 0.2s ease,
-    opacity 0.2s ease;
-}
-
-.submit-btn:hover:not(:disabled) {
-  background-color: #1ed760;
-  transform: scale(1.02);
-}
-
-.submit-btn:active:not(:disabled) {
-  transform: scale(0.98);
-}
-
-.submit-btn:disabled {
-  background-color: #535353;
-  color: #b3b3b3;
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.btn-spinner {
-  width: 18px;
-  height: 18px;
-  border: 2px solid #000000;
-  border-top: 2px solid transparent;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  box-sizing: border-box;
 }
 </style>
