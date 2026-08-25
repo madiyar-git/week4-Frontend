@@ -46,7 +46,7 @@ const themeOverrides: GlobalThemeOverrides = {
   <NConfigProvider :theme="darkTheme" :theme-overrides="themeOverrides">
     <NGlobalStyle />
 
-    <NMessageProvider>
+    <NMessageProvider :max="3" :duration="3000" placement="top-right">
       <main class="app-main">
         <header class="app-header">
           <h1>Task Manager</h1>

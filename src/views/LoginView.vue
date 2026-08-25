@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { useAuthStore } from '@/stores/auth';
 import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { useAuthStore } from '@/stores/auth';
 import { useApi } from '@/composables/useApi';
-import { authApi } from '@/api/authApi';
-import type { LoginResponse } from '@/api/authApi';
+import { useNotify } from '@/composables/useNotify';
+import { authApi, type LoginResponse } from '@/api/authApi';
+
 import BaseButton from '@/components/base/BaseButton.vue';
 import BaseInput from '@/components/base/BaseInput.vue';
 import BaseCard from '@/components/base/BaseCard.vue';
@@ -13,10 +14,10 @@ import BaseForm from '@/components/base/BaseForm.vue';
 const router = useRouter();
 const route = useRoute();
 const auth = useAuthStore();
+const notify = useNotify();
 
 const username = ref<string>('');
 const password = ref<string>('');
-const successMessage = ref<string | null>(null);
 
 const { loading: isLoading, error, execute, status_code } = useApi<LoginResponse>();
 
@@ -49,6 +50,7 @@ async function handleSubmit() {
 
   if (result?.access && result?.refresh) {
     auth.login(username.value, result.access, result.refresh);
+    notify.success('Welcome back!');
     const redirectPath = (route.query.redirect as string) || '/tasks';
     router.push(redirectPath);
   }
@@ -56,20 +58,14 @@ async function handleSubmit() {
 
 onMounted(() => {
   if (route.query.registered === '1') {
-    successMessage.value = 'You have successfully registered! Please log in now.';
-    setTimeout(() => {
-      router.replace({ query: {} });
-    }, 3000);
+    notify.success('You have successfully registered! Please log in now.');
+    router.replace({ query: {} });
   }
 });
 </script>
 
 <template>
   <div class="login-container">
-    <div v-if="successMessage" class="success-banner">
-      {{ successMessage }}
-    </div>
-
     <BaseCard class="login-card">
       <template #header>
         <h2>Sign in</h2>

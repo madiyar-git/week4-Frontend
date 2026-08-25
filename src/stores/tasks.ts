@@ -1,58 +1,131 @@
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
-import { api } from '@/api/client';
+import { ref, computed } from 'vue';
+import type { DataTableRowKey } from 'naive-ui';
 import type { Task } from '@/types/task';
-import type { AxiosError } from 'axios';
+import { taskApi, type CreateTaskDto, type UpdateTaskDto } from '@/api/tasks';
+import { useNotify } from '@/composables/useNotify';
+import { formatErrorMessage } from '@/api/errorHandler';
 
 export const useTaskStore = defineStore('tasks', () => {
+  const notify = useNotify();
   const tasks = ref<Task[]>([]);
   const isLoading = ref<boolean>(false);
   const error = ref<string | null>(null);
+
+  const searchQuery = ref<string>('');
+  const checkedRowKeys = ref<DataTableRowKey[]>([]);
+
+  const filteredTasks = computed(() => {
+    if (!searchQuery.value.trim()) return tasks.value;
+    const q = searchQuery.value.toLowerCase().trim();
+    return tasks.value.filter((task) => {
+      const matchTitle = task.title.toLowerCase().includes(q);
+      const matchDesc = task.description?.toLowerCase().includes(q) ?? false;
+      return matchTitle || matchDesc;
+    });
+  });
 
   async function fetchTasks(): Promise<void> {
     isLoading.value = true;
     error.value = null;
     try {
-      const { data } = await api.get<Task[]>('/tasks/');
-      tasks.value = data;
+      const response = await taskApi.getAll();
+      tasks.value = response.data;
     } catch (err) {
-      const axiosError = err as AxiosError;
-      error.value =
-        axiosError.response?.status === 401
-          ? 'Session expired. Please log in again.'
-          : 'Failed to load tasks.';
+      const message = formatErrorMessage(err);
+      error.value = message;
+      notify.error(message);
     } finally {
       isLoading.value = false;
     }
   }
 
-  async function createTask(payload: Omit<Task, 'id' | 'owner' | 'created_at'>): Promise<void> {
+  async function createTask(payload: CreateTaskDto): Promise<void> {
     try {
-      const { data } = await api.post<Task>('/tasks/', payload);
-      tasks.value = [data, ...tasks.value];
+      const response = await taskApi.create(payload);
+
+      tasks.value = [response.data, ...tasks.value];
+      notify.success('Task created successfully!');
     } catch (err) {
-      const systemError = err as Error;
-      throw new Error(systemError.message || 'Failed to create task.');
+      const message = formatErrorMessage(err);
+      notify.error(message);
+      throw new Error(message);
     }
   }
 
-  async function updateTask(id: number, patch: Partial<Task>): Promise<void> {
+  async function updateTask(id: number, patch: UpdateTaskDto): Promise<void> {
     try {
-      const { data } = await api.patch<Task>(`/tasks/${id}/`, patch);
-      tasks.value = tasks.value.map((t) => (t.id === id ? data : t));
+      const response = await taskApi.update(id, patch);
+      tasks.value = tasks.value.map((t) => (t.id === id ? response.data : t));
+      notify.success('Task updated successfully!');
     } catch (err) {
-      const systemError = err as Error;
-      throw new Error(systemError.message || 'Failed to update task.');
+      const message = formatErrorMessage(err);
+      notify.error(message);
+      throw new Error(message);
+    }
+  }
+
+  async function toggleTaskStatus(task: Task): Promise<void> {
+    const updatedStatus = !task.completed;
+    try {
+      const response = await taskApi.update(task.id, { completed: updatedStatus });
+      tasks.value = tasks.value.map((t) => (t.id === task.id ? response.data : t));
+      notify.success(`Status updated for "${task.title}"`);
+    } catch (err) {
+      const message = formatErrorMessage(err);
+      notify.error(message);
     }
   }
 
   async function deleteTask(id: number): Promise<void> {
     try {
-      await api.delete(`/tasks/${id}/`);
+      await taskApi.delete(id);
       tasks.value = tasks.value.filter((t) => t.id !== id);
+      notify.success('Task deleted successfully!');
     } catch (err) {
-      const systemError = err as Error;
-      throw new Error(systemError.message || 'Failed to delete task.');
+      const message = formatErrorMessage(err);
+      notify.error(message);
+      throw new Error(message);
+    }
+  }
+
+  async function bulkDeleteTasks(): Promise<void> {
+    if (checkedRowKeys.value.length === 0) return;
+    isLoading.value = true;
+    const count = checkedRowKeys.value.length;
+
+    try {
+      await Promise.all(checkedRowKeys.value.map((id) => taskApi.delete(Number(id))));
+      const idsSet = new Set(checkedRowKeys.value.map(Number));
+      tasks.value = tasks.value.filter((t) => !idsSet.has(t.id));
+      checkedRowKeys.value = [];
+      notify.success(`Deleted ${count} task(s)!`);
+    } catch (err) {
+      const message = formatErrorMessage(err);
+      notify.error(message);
+      throw new Error(message);
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  async function bulkUpdateTaskStatus(completed: boolean): Promise<void> {
+    if (checkedRowKeys.value.length === 0) return;
+    isLoading.value = true;
+
+    try {
+      await Promise.all(
+        checkedRowKeys.value.map((id) => taskApi.update(Number(id), { completed }))
+      );
+      const idsSet = new Set(checkedRowKeys.value.map(Number));
+      tasks.value = tasks.value.map((t) => (idsSet.has(t.id) ? { ...t, completed } : t));
+      notify.success(`Status updated for ${checkedRowKeys.value.length} task(s)!`);
+      checkedRowKeys.value = [];
+    } catch (err) {
+      const message = formatErrorMessage(err);
+      notify.error(message);
+    } finally {
+      isLoading.value = false;
     }
   }
 
@@ -60,7 +133,24 @@ export const useTaskStore = defineStore('tasks', () => {
     tasks.value = [];
     error.value = null;
     isLoading.value = false;
+    searchQuery.value = '';
+    checkedRowKeys.value = [];
   }
 
-  return { tasks, isLoading, error, fetchTasks, createTask, updateTask, deleteTask, reset };
+  return {
+    tasks,
+    isLoading,
+    error,
+    searchQuery,
+    checkedRowKeys,
+    filteredTasks,
+    fetchTasks,
+    createTask,
+    updateTask,
+    toggleTaskStatus,
+    deleteTask,
+    bulkDeleteTasks,
+    bulkUpdateTaskStatus,
+    reset
+  };
 });

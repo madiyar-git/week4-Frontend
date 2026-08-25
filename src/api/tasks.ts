@@ -1,7 +1,7 @@
 import type { Task } from '@/types/task';
 import { get, post, patch, del, type ApiResponse } from './client';
 
-export type CreateTaskDto = Omit<Task, 'id' | 'completed'>;
+export type CreateTaskDto = Omit<Task, 'id' | 'completed' | 'created_at'>;
 export type UpdateTaskDto = Partial<Task>;
 
 export const taskApi = {
