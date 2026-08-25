@@ -3,7 +3,13 @@ import { RouterLink, RouterView, useRouter } from 'vue-router';
 import { useAuthStore } from './stores/auth';
 import { storeToRefs } from 'pinia';
 import { useTaskStore } from './stores/tasks';
-import BaseButton from '@/components/base/BaseButton.vue';
+import {
+  NConfigProvider,
+  NGlobalStyle,
+  NMessageProvider,
+  darkTheme,
+  type GlobalThemeOverrides
+} from 'naive-ui';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -17,46 +23,71 @@ function handleLogout(): void {
   tasksStore.reset()
   router.push('/login')
 }
+
+const themeOverrides: GlobalThemeOverrides = {
+  common: {
+    primaryColor: '#1db954',
+    primaryColorHover: '#1ed760',
+    primaryColorPressed: '#169c46',
+    primaryColorSuppl: '#1db954',
+    borderRadius: '6px',
+    fontSize: '16px',
+    fontSizeSmall: '14px',
+    fontSizeMedium: '16px',
+    fontSizeLarge: '18px',
+    fontSizeHuge: '20px'
+  },
+  Button: {
+    textColorPrimary: '#000000'
+  }
+};
 </script>
-
 <template>
-  <main class="app-main">
-    <header class="app-header">
-      <h1>Task Manager</h1>
+  <NConfigProvider :theme="darkTheme" :theme-overrides="themeOverrides">
+    <NGlobalStyle />
 
-      <nav class="nav-bar">
-        <RouterLink v-if="isAuthenticated" to="/tasks" class="nav-link">Tasks</RouterLink>
+    <NMessageProvider>
+      <main class="app-main">
+        <header class="app-header">
+          <h1>Task Manager</h1>
 
-        <RouterLink v-if="!isAuthenticated" to="/login" class="nav-link">Login</RouterLink>
-        <RouterLink v-if="!isAuthenticated" to="/register" class="nav-link"
-          >Registration</RouterLink
-        >
+          <nav class="nav-bar">
+            <RouterLink v-if="isAuthenticated" to="/tasks" class="nav-link"> Tasks </RouterLink>
 
-        <div v-if="isAuthenticated" class="user-menu">
-          <span class="username-display">Hi, {{ username }}</span>
-          <BaseButton
-            type="submit"
-            variant="danger"
-            size="sm"
-            :disabled="false"
-            @click="handleLogout"
-            class="logout-btn"
-          >
-            Log out
-          </BaseButton>
-        </div>
-      </nav>
-    </header>
+            <RouterLink v-if="!isAuthenticated" to="/login" class="nav-link"> Login </RouterLink>
+            <RouterLink v-if="!isAuthenticated" to="/register" class="nav-link">
+              Registration
+            </RouterLink>
 
-    <RouterView />
-  </main>
+            <div v-if="isAuthenticated" class="user-menu">
+              <span class="username-display">Hi, {{ username }}</span>
+              <n-button
+                type="error"
+                size="small"
+                quaternary
+                class="logout-btn"
+                @click="handleLogout"
+              >
+                Log out
+              </n-button>
+            </div>
+          </nav>
+        </header>
+
+        <RouterView />
+      </main>
+    </NMessageProvider>
+  </NConfigProvider>
 </template>
 
 <style>
+html,
+body {
+  font-size: 16px;
+}
+
 body {
   margin: 0;
-  background-color: #121212;
-  color: #ffffff;
   font-family: sans-serif;
 }
 

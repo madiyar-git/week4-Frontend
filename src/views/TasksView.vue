@@ -6,32 +6,14 @@ import { useApi } from '@/composables/useApi';
 import type { Task } from '../types/task';
 import BaseButton from '@/components/base/BaseButton.vue';
 import BaseInput from '@/components/base/BaseInput.vue';
-import BaseCard from '@/components/base/BaseCard.vue';
 import TaskList from '../components/TaskList.vue';
 import { usePagination } from '@/composables/usePagination';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal.vue';
 import { useSaveInClipBoard } from '@/composables/useSaveInClipBoard.ts';
-import { useForm, type Errors } from '@/composables/useForm.ts';
 import { taskApi } from '@/api/tasks.ts';
 import { type Result, isError } from '@/types/result.ts';
 import EditTaskModal from '@/components/EditTaskModal.vue';
-
-interface TaskFormFields {
-  title: string;
-  description: string;
-  priority: 'low' | 'medium' | 'high';
-}
-
-const validateTaskForm = (values: TaskFormFields): Errors<TaskFormFields> => {
-  const errors: Errors<TaskFormFields> = {};
-
-  if (!values.title.trim()) {
-    errors.title = 'Title is required';
-  } else if (values.title.trim().length < 3) {
-    errors.title = 'Title must be at least 3 symbols';
-  }
-  return errors;
-};
+import CreateTaskModal from '@/components/CreateTaskModal.vue';
 
 const tasksStore = useTaskStore();
 const { tasks } = storeToRefs(tasksStore);
@@ -41,11 +23,12 @@ const {
   error: fetchError,
   execute: fetchExecute
 } = useApi<Result<Task[]>>();
-const { loading: isCreateLoading, error: createError, execute: createExecute } = useApi<Task>();
+const { loading: isCreateLoading, execute: createExecute } = useApi<Task>();
 const { loading: isActionLoading, error: actionError, execute: actionExecute } = useApi<unknown>();
 
 const searchInput = ref<string>('');
 
+// [ ] Поиск задания по названию
 const filteredTasks = computed(() => {
   const query = searchInput.value.trim().toLowerCase();
   if (!query) return tasks.value;
@@ -59,9 +42,11 @@ watch(searchInput, () => {
   currentPage.value = 1;
 });
 
+const isCreateModalOpen = ref(false);
 const isEditModalOpen = ref<boolean>(false);
 const taskToEdit = ref<Task | null>(null);
 
+// [ ] Изменение задания через модалку
 function handleEditTask(task: Task): void {
   taskToEdit.value = task;
   isEditModalOpen.value = true;
@@ -89,19 +74,6 @@ function closeEditModal(): void {
   taskToEdit.value = null;
 }
 
-const { values, errors, handleSubmit, reset } = useForm<TaskFormFields>(
-  {
-    title: '',
-    description: '',
-    priority: 'medium'
-  },
-  validateTaskForm
-);
-const getErrorString = (err: string | string[] | null | undefined): string | undefined => {
-  if (!err) return undefined;
-  return Array.isArray(err) ? err[0] : err;
-};
-
 const isDeleteModalOpen = ref<boolean>(false);
 const taskToDelete = ref<Task | null>(null);
 
@@ -109,6 +81,7 @@ const isGlobalLoading = computed(
   () => isFetchLoading.value || isCreateLoading.value || isActionLoading.value
 );
 
+// Загрузка заданий
 async function loadTasks(): Promise<void> {
   const result = await fetchExecute(async () => {
     const response = await taskApi.getAll();
@@ -124,30 +97,34 @@ async function loadTasks(): Promise<void> {
   }
 }
 
-const onSubmit = handleSubmit(async (fromData) => {
+// [ ] Создание задания
+async function handleCreateTask(newTaskData: {
+  title: string;
+  description: string;
+  priority: Task['priority'];
+}) {
   if (isGlobalLoading.value) return;
   const result = await createExecute(async () => {
     const res = await taskApi.create({
-      title: fromData.title.trim(),
-      description: fromData.description.trim(),
-      priority: fromData.priority
+      title: newTaskData.title.trim(),
+      description: newTaskData.description.trim(),
+      priority: newTaskData.priority
     });
     return res.data;
   });
 
   if (result) {
     tasks.value.unshift(result);
-    reset();
     currentPage.value = 1;
   }
-});
+}
 
+// [ ] Изменение статуса задания
 async function handleToggleCompleted(id: number, fields: Partial<Task>): Promise<void> {
   await actionExecute(() => taskApi.update(id, fields));
 
   if (actionError.value) {
     const taskIndex = tasks.value.findIndex((t) => t.id === id);
-
     const targetTask = tasks.value[taskIndex];
 
     if (targetTask && fields.completed !== undefined) {
@@ -158,6 +135,7 @@ async function handleToggleCompleted(id: number, fields: Partial<Task>): Promise
   }
 }
 
+// [ ] Удаление задания через модалку
 function handleDeleteTask(id: number): void {
   const foundTask = tasks.value.find((t) => t.id === id);
   if (foundTask) {
@@ -186,6 +164,7 @@ function closeDeleteModal(): void {
   taskToDelete.value = null;
 }
 
+// [ ] Групповые действия
 async function bulkAction(
   actionName: 'toggle_all' | 'clear_completed' | 'clear_all'
 ): Promise<void> {
@@ -222,63 +201,19 @@ onMounted(() => {
   <main class="app-main">
     <div class="tasks-container">
       <h2 @click="useSaveInClipBoard('My Tasks')">My Tasks</h2>
+      <n-button type="primary" @click="isCreateModalOpen = true"> + Create Task </n-button>
+
       <div class="tasks-page">
-        <BaseCard class="task-form-card">
-          <template #header>
-            <h3>New Task</h3>
-          </template>
-
-          <form @submit.prevent="onSubmit" class="create-task-form">
-            <div class="form-group">
-              <BaseInput
-                v-model="values.title"
-                type="text"
-                label="Title"
-                placeholder="Task title (min 3 symbols)..."
-                :disabled="isGlobalLoading"
-                :error="getErrorString(errors.title) || createError || undefined"
-                required
-              />
-            </div>
-
-            <div class="form-group">
-              <BaseInput
-                v-model="values.description"
-                label="Description"
-                placeholder="Description (optional)..."
-                :disabled="isGlobalLoading"
-              />
-            </div>
-
-            <div class="form-group">
-              <label for="priority">Priority</label>
-              <select
-                id="priority"
-                v-model="values.priority"
-                :class="values.priority"
-                :disabled="isGlobalLoading"
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-              </select>
-            </div>
-
-            <BaseButton
-              type="submit"
-              variant="primary"
-              size="lg"
-              :disabled="isGlobalLoading"
-              :loading="isCreateLoading"
-              style="width: 100%; margin-top: 12px"
-            >
-              Create New Task
-            </BaseButton>
-          </form>
-        </BaseCard>
+        <CreateTaskModal
+          :open="isCreateModalOpen"
+          :loading="isCreateLoading"
+          @close="isCreateModalOpen = false"
+          @create="handleCreateTask"
+        />
 
         <hr class="divider" />
         <BaseInput v-model="searchInput" type="text" placeholder="Search" />
+
         <div v-if="isFetchLoading" class="spinner-container">
           <div class="spinner"></div>
           <p>Loading tasks from server...</p>
@@ -309,6 +244,7 @@ onMounted(() => {
           @update="handleToggleCompleted"
           @bulk-action="bulkAction"
         />
+
         <EditTaskModal
           :open="isEditModalOpen"
           :task="taskToEdit"
@@ -316,6 +252,7 @@ onMounted(() => {
           @close="closeEditModal"
           @submit="confirmEditTask"
         />
+
         <div class="pagination-controls">
           <BaseButton
             variant="secondary"
@@ -338,6 +275,7 @@ onMounted(() => {
       </div>
     </div>
   </main>
+
   <ConfirmDeleteModal
     :open="isDeleteModalOpen"
     :task-title="taskToDelete?.title || ''"
@@ -369,90 +307,6 @@ h2 {
   font-size: 1.75rem;
   font-weight: 700;
   text-align: center;
-  color: #ffffff;
-}
-
-.task-form-card {
-  margin-bottom: 25px;
-}
-
-h3 {
-  margin: 0;
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: #1db954;
-}
-
-.create-task-form {
-  display: flex;
-  flex-direction: column;
-}
-
-.form-group {
-  margin-bottom: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.form-group:last-of-type {
-  margin-bottom: 20px;
-}
-
-label {
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: #ffffff;
-  text-align: left;
-}
-
-select {
-  background-color: #242424;
-  border: 1px solid #727272;
-  color: #ffffff;
-  padding: 12px;
-  border-radius: 4px;
-  font-size: 0.95rem;
-  box-sizing: border-box;
-  cursor: pointer;
-  font-family: sans-serif;
-  transition:
-    border-color 0.2s ease,
-    background-color 0.2s ease,
-    color 0.2s ease;
-}
-
-select:focus {
-  border-color: #ffffff;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
-  outline: none;
-}
-
-select:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.low {
-  background-color: rgba(29, 185, 84, 0.12);
-  color: #1ed760;
-  border-color: rgba(29, 185, 84, 0.3);
-}
-
-.medium {
-  background-color: rgba(255, 170, 0, 0.12);
-  color: #ffb703;
-  border-color: rgba(255, 170, 0, 0.3);
-}
-
-.high {
-  background-color: rgba(233, 20, 41, 0.15);
-  color: #ff4d5e;
-  border-color: rgba(233, 20, 41, 0.35);
-}
-
-select option {
-  background-color: #242424;
   color: #ffffff;
 }
 
