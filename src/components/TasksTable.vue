@@ -309,6 +309,8 @@ defineExpose({
       </template>
     </NDataTable>
 
+    <n-back-top :right="100" />
+
     <CreateTaskModal
       :open="isCreateModalOpen"
       :loading="isActionLoading"
