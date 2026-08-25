@@ -8,6 +8,10 @@ function getMessage() {
     const { message } = createDiscreteApi(['message'], {
       configProviderProps: {
         theme: darkTheme
+      },
+      messageProviderProps: {
+        placement: 'top-right',
+        max: 3
       }
     });
     messageApi = message;
@@ -18,18 +22,18 @@ function getMessage() {
 export function useNotify() {
   return {
     success: (text: string) => {
-      getMessage().success(text, { keepAliveOnHover: true });
+      getMessage().success(text, { keepAliveOnHover: true, closable: true, duration: 3000 });
     },
     error: (errOrText: unknown) => {
       const text = typeof errOrText === 'string' ? errOrText : formatErrorMessage(errOrText);
 
-      getMessage().error(text, { keepAliveOnHover: true });
+      getMessage().error(text, { keepAliveOnHover: true, closable: true, duration: 3000 });
     },
     info: (text: string) => {
-      getMessage().info(text, { keepAliveOnHover: true });
+      getMessage().info(text, { keepAliveOnHover: true, closable: true, duration: 3000 });
     },
     warning: (text: string) => {
-      getMessage().warning(text, { keepAliveOnHover: true });
+      getMessage().warning(text, { keepAliveOnHover: true, closable: true, duration: 3000 });
     }
   };
 }
