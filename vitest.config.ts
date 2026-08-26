@@ -11,7 +11,7 @@ export default defineConfig((configEnv) => {
     defineConfig({
       test: {
         environment: 'jsdom',
-        exclude: [...configDefaults.exclude, 'e2e/**'],
+        exclude: [...configDefaults.exclude, 'e2e/**', '**/dist/**'],
         root: fileURLToPath(new URL('./', import.meta.url))
       }
     })
