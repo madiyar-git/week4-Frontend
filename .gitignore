@@ -7,38 +7,31 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
+# Dependencies & Build
+node_modules/
+dist/
+dist-ssr/
+coverage/
+*.tsbuildinfo
+.eslintcache
+
+# OS & Environment
 .DS_Store
-dist
-dist-ssr
-coverage
 *.local
+.env*
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
 
-*.tsbuildinfo
-
-.eslintcache
-
-# Cypress
+# Testing & Tools
 /cypress/videos/
 /cypress/screenshots/
-
-# Vitest
 __screenshots__/
-
-# Vite
 *.timestamp-*-*.mjs
-
-.env.local
-.env
-
-/dist
