@@ -46,3 +46,7 @@ npm run build
 ```sh
 npm run test:unit
 ```
+
+## 🧪 Запуск тестов
+
+- **Frontend (локально):** ` cd .\vue-project\ && npm run test`
