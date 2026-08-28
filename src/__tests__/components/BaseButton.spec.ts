@@ -47,4 +47,13 @@ describe('BaseButton', () => {
 
     expect(wrapper.emitted('click')).toBeFalsy();
   });
+
+  test('does not emit click when loading', async () => {
+    const wrapper = mount(BaseButton, {
+      props: { loading: true }
+    });
+
+    await wrapper.trigger('click');
+    expect(wrapper.emitted('click')).toBeFalsy();
+  });
 });

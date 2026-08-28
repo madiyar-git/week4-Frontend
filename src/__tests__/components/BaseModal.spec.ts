@@ -54,4 +54,20 @@ describe('BaseModal', () => {
     expect(wrapper.find('.custom-content').text()).toBe('Body Text');
     expect(wrapper.find('.modal-footer .save-btn').exists()).toBe(true);
   });
+
+  test('does not emit close on backdrop click when closeOnBackdrop is false', async () => {
+    const wrapper = mountModal({ closeOnBackdrop: false });
+
+    await wrapper.find('.modal-backdrop').trigger('click');
+    expect(wrapper.emitted('close')).toBeFalsy();
+  });
+
+  test('emits close event on Escape key press', async () => {
+    const wrapper = mountModal();
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.emitted('close')).toBeTruthy();
+  });
 });
