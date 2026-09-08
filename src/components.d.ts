@@ -26,6 +26,7 @@ declare module 'vue' {
     NCheckbox: typeof import('naive-ui')['NCheckbox']
     NFormItem: typeof import('naive-ui')['NFormItem']
     NInput: typeof import('naive-ui')['NInput']
+    NSelect: typeof import('naive-ui')['NSelect']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     TaskCard: typeof import('./components/TaskCard.vue')['default']

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch, h } from 'vue';
+import { ref, reactive, onMounted, watch, h, onActivated } from 'vue';
 import { storeToRefs } from 'pinia';
 import {
   NDataTable,
@@ -259,6 +259,10 @@ const handleFetch = async () => {
 };
 
 onMounted(() => {
+  loadServerTasks();
+});
+
+onActivated(() => {
   loadServerTasks();
 });
 
