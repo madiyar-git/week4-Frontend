@@ -23,7 +23,7 @@ describe('taskApi', () => {
     } as unknown as Awaited<ReturnType<typeof taskApi.getAll>>);
 
     const result = await taskApi.getAll();
-    expect(get).toHaveBeenCalledWith('tasks/', { params: undefined });
+    expect(get).toHaveBeenCalledWith('/tasks/', { params: undefined });
     expect(result.data).toEqual(mockPaginatedData);
   });
 
@@ -35,7 +35,7 @@ describe('taskApi', () => {
     } as unknown as Awaited<ReturnType<typeof taskApi.getAll>>);
 
     await taskApi.getAll(params);
-    expect(get).toHaveBeenCalledWith('tasks/', { params });
+    expect(get).toHaveBeenCalledWith('/tasks/', { params });
   });
 
   test('create creates new task', async () => {
@@ -48,7 +48,7 @@ describe('taskApi', () => {
     } as unknown as Awaited<ReturnType<typeof taskApi.create>>);
 
     const result = await taskApi.create(newTask);
-    expect(post).toHaveBeenCalledWith('tasks/', newTask);
+    expect(post).toHaveBeenCalledWith('/tasks/', newTask);
     expect(result.data).toEqual(mockCreatedTask);
   });
 
@@ -62,7 +62,7 @@ describe('taskApi', () => {
     } as unknown as Awaited<ReturnType<typeof taskApi.update>>);
 
     const result = await taskApi.update(1, updateData);
-    expect(patch).toHaveBeenCalledWith('tasks/1/', updateData);
+    expect(patch).toHaveBeenCalledWith('/tasks/1/', updateData);
     expect(result.data).toEqual(mockUpdatedTask);
   });
 
@@ -73,6 +73,6 @@ describe('taskApi', () => {
     } as unknown as Awaited<ReturnType<typeof taskApi.delete>>);
 
     await taskApi.delete(1);
-    expect(del).toHaveBeenCalledWith('tasks/1/');
+    expect(del).toHaveBeenCalledWith('/tasks/1/');
   });
 });

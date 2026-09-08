@@ -18,6 +18,7 @@ declare module 'vue' {
     BaseModal: typeof import('./components/base/BaseModal.vue')['default']
     ConfirmDeleteModal: typeof import('./components/ConfirmDeleteModal.vue')['default']
     CreateTaskModal: typeof import('./components/CreateTaskModal.vue')['default']
+    DataFetcher: typeof import('./components/DataFetcher.vue')['default']
     EditTaskModal: typeof import('./components/EditTaskModal.vue')['default']
     NBackTop: typeof import('naive-ui')['NBackTop']
     NButton: typeof import('naive-ui')['NButton']

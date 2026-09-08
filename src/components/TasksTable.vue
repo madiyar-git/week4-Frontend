@@ -245,6 +245,19 @@ const columns: DataTableColumns<Task> = [
   }
 ];
 
+const handleFetch = async () => {
+  await taskStore.fetchTasks({
+    page: pagination.page,
+    page_size: pagination.pageSize,
+    search: searchQuery.value,
+    ordering: currentOrdering.value
+  });
+
+  if (error.value) {
+    throw new Error(error.value);
+  }
+};
+
 onMounted(() => {
   loadServerTasks();
 });
@@ -287,27 +300,29 @@ defineExpose({
       </div>
     </div>
 
-    <div v-if="error" class="error-banner">
-      <p>{{ error }}</p>
-      <NButton type="primary" size="small" @click="loadServerTasks">Retry</NButton>
-    </div>
+    <DataFetcher :fetcher="handleFetch" v-slot="{ loading, error: fetchError, refetch }">
+      <div v-if="fetchError" class="error-banner">
+        <p>{{ fetchError.message }}</p>
+        <NButton type="primary" size="small" @click="refetch">Retry</NButton>
+      </div>
 
-    <NDataTable
-      v-else
-      remote
-      :loading="isLoading"
-      :columns="columns"
-      :data="tasks"
-      :pagination="pagination"
-      :row-key="(row) => row.id"
-      :checked-row-keys="checkedRowKeys"
-      @update:checked-row-keys="handleCheck"
-      @update:sorter="handleSorterChange"
-    >
-      <template #empty>
-        <NEmpty description="No tasks found" />
-      </template>
-    </NDataTable>
+      <NDataTable
+        v-else
+        remote
+        :loading="loading"
+        :columns="columns"
+        :data="tasks"
+        :pagination="pagination"
+        :row-key="(row) => row.id"
+        :checked-row-keys="checkedRowKeys"
+        @update:checked-row-keys="handleCheck"
+        @update:sorter="handleSorterChange"
+      >
+        <template #empty>
+          <NEmpty description="No tasks found" />
+        </template>
+      </NDataTable>
+    </DataFetcher>
 
     <n-back-top :right="100" />
 

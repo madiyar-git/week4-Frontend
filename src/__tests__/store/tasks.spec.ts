@@ -230,7 +230,6 @@ describe('useTaskStore', () => {
     for (const actionKey of actionKeys) {
       const fn = storeRecord[actionKey] as UnknownFunction;
 
-      // 1. Проверка условия с пустым checkedRowKeys (для отработки раннего return в строках 76-77)
       store.checkedRowKeys = [];
       store.tasks = [createMockTask({ id: 1 }), createMockTask({ id: 2 })];
 
@@ -242,7 +241,6 @@ describe('useTaskStore', () => {
         await fn(1);
       } catch {}
 
-      // 2. Выполнение основной логики с непустым checkedRowKeys (строки 94-129)
       store.checkedRowKeys = [1, 2];
       try {
         await fn();
@@ -252,7 +250,6 @@ describe('useTaskStore', () => {
         await fn([1, 2]);
       } catch {}
 
-      // 3. Проверка обработки ошибок (catch-блоки)
       vi.mocked(taskApi.delete).mockRejectedValueOnce(new Error('Batch Action Error'));
       try {
         await fn();

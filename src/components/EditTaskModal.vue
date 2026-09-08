@@ -65,29 +65,44 @@ const onSubmit = handleSubmit((formData) => {
 
 <template>
   <BaseModal :open="open" title="Edit Task" @close="handleClose">
-    <form id="edit-task-form" class="task-form" @submit.prevent="onSubmit">
-      <BaseInput
-        v-model="values.title"
-        label="Title"
-        :error="getErrorString(errors.title)"
-        required
-      />
+    <DataFetcher
+      v-if="task?.id"
+      :url="`/tasks/${task.id}/`"
+      v-slot="{ loading: isFetching, error, refetch }"
+    >
+      <div v-if="isFetching" class="loading-state">Loading task...</div>
 
-      <BaseInput v-model="values.description" label="Description" />
-
-      <div class="form-group">
-        <label for="priority">Priority</label>
-        <select
-          id="priority"
-          v-model="values.priority"
-          :class="['priority-select', values.priority]"
-        >
-          <option value="low">Low</option>
-          <option value="medium">Medium</option>
-          <option value="high">High</option>
-        </select>
+      <div v-else-if="error" class="error-state">
+        <p>{{ error.message }}</p>
+        <BaseButton type="button" variant="secondary" size="sm" @click="refetch">
+          Retry
+        </BaseButton>
       </div>
-    </form>
+
+      <form v-else id="edit-task-form" class="task-form" @submit.prevent="onSubmit">
+        <BaseInput
+          v-model="values.title"
+          label="Title"
+          :error="getErrorString(errors.title)"
+          required
+        />
+
+        <BaseInput v-model="values.description" label="Description" />
+
+        <div class="form-group">
+          <label for="priority">Priority</label>
+          <select
+            id="priority"
+            v-model="values.priority"
+            :class="['priority-select', values.priority]"
+          >
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+      </form>
+    </DataFetcher>
 
     <template #footer>
       <BaseButton type="button" variant="secondary" @click="handleClose"> Cancel </BaseButton>

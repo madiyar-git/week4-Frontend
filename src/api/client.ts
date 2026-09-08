@@ -135,11 +135,14 @@ api.interceptors.response.use(
       interface RefreshResponse {
         access: string;
       }
-      const { data } = await api.post<RefreshResponse>('/token/refresh/', { refresh });
+      // const { data } = await api.post<RefreshResponse>('/token/refresh/', { refresh });
+      const refreshUrl = `${import.meta.env.VITE_API_URL || ''}/token/refresh/`;
+      const { data } = await axios.post<RefreshResponse>(refreshUrl, { refresh });
       localStorage.setItem('access_token', data.access);
 
       if (originalRequest.headers) {
-        originalRequest.headers.Authorization = `Bearer ${data.access}`;
+        // originalRequest.headers.Authorization = `Bearer ${data.access}`;
+        originalRequest.headers.set('Authorization', `Bearer ${data.access}`);
       }
 
       processQueue();
