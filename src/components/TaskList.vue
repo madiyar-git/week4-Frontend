@@ -23,7 +23,7 @@ const completedCount = computed(() => {
 });
 
 async function handleUpdateTask(id: number, fields: Partial<Task>) {
-  await taskStore.updateTask(id, fields); // Сохраняем на сервере!
+  await taskStore.updateTask(id, fields);
 }
 
 async function handleDeleteTask(id: number) {

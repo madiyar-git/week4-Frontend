@@ -22,7 +22,7 @@ import AsyncLoading from '@/components/base/AsyncLoading.vue';
 import AsyncError from '@/components/base/AsyncError.vue';
 
 const taskStore = useTaskStore();
-const { isLoading, error, searchQuery, checkedRowKeys, tasks, totalCount } = storeToRefs(taskStore);
+const { error, searchQuery, checkedRowKeys, tasks, totalCount } = storeToRefs(taskStore);
 
 const isCreateModalOpen = ref(false);
 const isDeleteModalOpen = ref(false);
