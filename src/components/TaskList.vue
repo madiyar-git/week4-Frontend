@@ -1,27 +1,62 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
+import { storeToRefs } from 'pinia';
+import { NPagination } from 'naive-ui';
 import type { Task } from '../types/task';
+import { useTaskStore } from '@/stores/tasks';
 import BaseButton from '@/components/base/BaseButton.vue';
 import TaskCard from './TaskCard.vue';
 
-const tasks = defineModel<Task[]>({ required: true });
-
 defineEmits<{
-  delete: [TaskId: number];
-  update: [taskId: number, fields: Partial<Task>];
   edit: [task: Task];
   'bulk-action': [action: 'toggle_all' | 'clear_completed' | 'clear_all'];
 }>();
 
+// 1. Берем данные и методы напрямую из Pinia store
+const taskStore = useTaskStore();
+const { tasks, totalCount, searchQuery } = storeToRefs(taskStore);
+
+const page = ref(1);
+const pageSize = ref(10);
+
 const completedCount = computed(() => {
   return tasks.value.filter((t) => t.completed).length;
 });
+
+// 2. Функция сохранения изменений на бэкенде
+async function handleUpdateTask(id: number, fields: Partial<Task>) {
+  await taskStore.updateTask(id, fields); // Сохраняем на сервере!
+}
+
+// 3. Функция удаления задачи
+async function handleDeleteTask(id: number) {
+  await taskStore.deleteTask(id);
+}
+
+function handlePageChange(newPage: number) {
+  page.value = newPage;
+  taskStore.fetchTasks({
+    page: page.value,
+    page_size: pageSize.value,
+    search: searchQuery.value
+  });
+}
+
+function handlePageSizeChange(newPageSize: number) {
+  pageSize.value = newPageSize;
+  page.value = 1;
+  taskStore.fetchTasks({
+    page: page.value,
+    page_size: pageSize.value,
+    search: searchQuery.value
+  });
+}
 </script>
 
 <template>
   <div class="task-list-container">
     <div class="stats-panel">
-      <div class="stats-text">Tasks: {{ tasks.length }} (completed: {{ completedCount }})</div>
+      <div class="stats-text">Tasks: {{ totalCount }} (completed: {{ completedCount }})</div>
 
       <div class="bulk-actions" v-if="tasks.length > 0">
         <BaseButton
@@ -58,10 +93,22 @@ const completedCount = computed(() => {
         v-for="(task, index) in tasks"
         :key="task.id"
         v-model="tasks[index]!"
-        @delete="$emit('delete', $event)"
+        @delete="handleDeleteTask"
+        @update="handleUpdateTask"
         @edit="$emit('edit', $event)"
-        @update="(id, fields) => $emit('update', id, fields)"
       />
+
+      <div class="pagination-wrapper">
+        <NPagination
+          v-model:page="page"
+          v-model:page-size="pageSize"
+          :item-count="totalCount"
+          :page-sizes="[5, 10, 20, 50]"
+          show-size-picker
+          @update:page="handlePageChange"
+          @update:page-size="handlePageSizeChange"
+        />
+      </div>
     </div>
     <p v-else class="empty-state">No tasks yet</p>
   </div>
@@ -113,5 +160,12 @@ const completedCount = computed(() => {
   color: #b3b3b3;
   font-style: italic;
   margin-top: 40px;
+}
+
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+  padding: 12px 0;
 }
 </style>
