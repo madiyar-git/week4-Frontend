@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch, h, onActivated } from 'vue';
+import { ref, reactive, onMounted, watch, h, onActivated, defineAsyncComponent } from 'vue';
 import { storeToRefs } from 'pinia';
 import {
   NDataTable,
@@ -18,7 +18,8 @@ import { useTaskStore } from '@/stores/tasks';
 import BaseButton from '@/components/base/BaseButton.vue';
 import CreateTaskModal from '@/components/CreateTaskModal.vue';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.vue';
-import EditTaskModal from '@/components/EditTaskModal.vue';
+import AsyncLoading from '@/components/base/AsyncLoading.vue';
+import AsyncError from '@/components/base/AsyncError.vue';
 
 const taskStore = useTaskStore();
 const { isLoading, error, searchQuery, checkedRowKeys, tasks, totalCount } = storeToRefs(taskStore);
@@ -96,6 +97,14 @@ async function handleCreateTask(newTaskData: {
     isActionLoading.value = false;
   }
 }
+
+const EditTaskModal = defineAsyncComponent({
+  loader: () => import('@/components/EditTaskModal.vue'),
+  loadingComponent: AsyncLoading,
+  delay: 200,
+  errorComponent: AsyncError,
+  timeout: 5000
+});
 
 function openEditModal(task: Task) {
   selectedTask.value = task;
@@ -354,6 +363,7 @@ defineExpose({
     />
 
     <EditTaskModal
+      v-if="isEditModalOpen"
       :open="isEditModalOpen"
       :task="selectedTask"
       :loading="isActionLoading"

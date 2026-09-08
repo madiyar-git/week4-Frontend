@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { ref, computed, watch, markRaw, onMounted, onActivated } from 'vue';
+import { ref, computed, watch, markRaw, defineAsyncComponent } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useTaskStore } from '@/stores/tasks';
 
 import TasksTable from '@/components/TasksTable.vue';
-import TaskList from '@/components/TaskList.vue';
 import { useSaveInClipBoard } from '@/composables/useSaveInClipBoard';
+import AsyncLoading from '@/components/base/AsyncLoading.vue';
+import AsyncError from '@/components/base/AsyncError.vue';
 
 interface Tab {
   key: string;
@@ -18,16 +19,24 @@ interface Tab {
 const taskStore = useTaskStore();
 const { tasks } = storeToRefs(taskStore);
 
+const TaskListAsync = defineAsyncComponent({
+  loader: () => import('@/components/TaskList.vue'),
+  loadingComponent: AsyncLoading,
+  delay: 200,
+  errorComponent: AsyncError,
+  timeout: 5000
+});
+
 const tabs: Tab[] = [
   { key: 'table', label: 'Table', component: markRaw(TasksTable), icon: '📊' },
-  { key: 'list', label: 'List', component: markRaw(TaskList), icon: '📑' }
+  { key: 'list', label: 'List', component: markRaw(TaskListAsync), icon: '📑' }
 ];
 
 const route = useRoute();
 const router = useRouter();
 
 const activeComponentRef = ref<
-  InstanceType<typeof TasksTable> | InstanceType<typeof TaskList> | null
+  InstanceType<typeof TasksTable> | InstanceType<typeof TaskListAsync> | null
 >(null);
 
 const activeTabKey = computed(() => {

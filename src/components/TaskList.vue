@@ -12,7 +12,6 @@ defineEmits<{
   'bulk-action': [action: 'toggle_all' | 'clear_completed' | 'clear_all'];
 }>();
 
-// 1. Берем данные и методы напрямую из Pinia store
 const taskStore = useTaskStore();
 const { tasks, totalCount, searchQuery } = storeToRefs(taskStore);
 
@@ -23,12 +22,10 @@ const completedCount = computed(() => {
   return tasks.value.filter((t) => t.completed).length;
 });
 
-// 2. Функция сохранения изменений на бэкенде
 async function handleUpdateTask(id: number, fields: Partial<Task>) {
   await taskStore.updateTask(id, fields); // Сохраняем на сервере!
 }
 
-// 3. Функция удаления задачи
 async function handleDeleteTask(id: number) {
   await taskStore.deleteTask(id);
 }

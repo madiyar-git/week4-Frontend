@@ -11,6 +11,8 @@ export {};
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AsyncError: typeof import('./components/base/AsyncError.vue')['default']
+    AsyncLoading: typeof import('./components/base/AsyncLoading.vue')['default']
     BaseButton: typeof import('./components/base/BaseButton.vue')['default']
     BaseCard: typeof import('./components/base/BaseCard.vue')['default']
     BaseForm: typeof import('./components/base/BaseForm.vue')['default']
