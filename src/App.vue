@@ -33,9 +33,9 @@ const { isAuthenticated, username } = storeToRefs(authStore);
 const { logout } = authStore;
 
 function handleLogout(): void {
-  logout();
-  tasksStore.reset();
-  router.push('/login');
+  logout()
+  tasksStore.reset()
+  router.push('/login')
 }
 
 const themeOverrides: GlobalThemeOverrides = {
