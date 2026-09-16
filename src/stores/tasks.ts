@@ -13,7 +13,7 @@ export const useTaskStore = defineStore('tasks', () => {
   const isLoading = ref<boolean>(false);
   const error = ref<string | null>(null);
 
-  const searchQuery = ref<string>('');
+  const searchQuery = ref<string>(localStorage.getItem('tasks_search_query') || '');
   const checkedRowKeys = ref<DataTableRowKey[]>([]);
 
   const filteredTasks = computed(() => {

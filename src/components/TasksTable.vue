@@ -3,7 +3,7 @@
 значения в объекте `pagination` — ему требовались колбэки `onChange` и `onUpdatePageSize`. ###
 Исправленный `TasksTable.vue` ```vue
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch, h } from 'vue';
+import { ref, reactive, onMounted, watch, h, onActivated, defineAsyncComponent } from 'vue';
 import { storeToRefs } from 'pinia';
 import {
   NDataTable,
@@ -22,10 +22,11 @@ import { useTaskStore } from '@/stores/tasks';
 import BaseButton from '@/components/base/BaseButton.vue';
 import CreateTaskModal from '@/components/CreateTaskModal.vue';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.vue';
-import EditTaskModal from '@/components/EditTaskModal.vue';
+import AsyncLoading from '@/components/base/AsyncLoading.vue';
+import AsyncError from '@/components/base/AsyncError.vue';
 
 const taskStore = useTaskStore();
-const { isLoading, error, searchQuery, checkedRowKeys, tasks, totalCount } = storeToRefs(taskStore);
+const { error, searchQuery, checkedRowKeys, tasks, totalCount } = storeToRefs(taskStore);
 
 const isCreateModalOpen = ref(false);
 const isDeleteModalOpen = ref(false);
@@ -100,6 +101,14 @@ async function handleCreateTask(newTaskData: {
     isActionLoading.value = false;
   }
 }
+
+const EditTaskModal = defineAsyncComponent({
+  loader: () => import('@/components/EditTaskModal.vue'),
+  loadingComponent: AsyncLoading,
+  delay: 200,
+  errorComponent: AsyncError,
+  timeout: 5000
+});
 
 function openEditModal(task: Task) {
   selectedTask.value = task;
@@ -249,7 +258,24 @@ const columns: DataTableColumns<Task> = [
   }
 ];
 
+const handleFetch = async () => {
+  await taskStore.fetchTasks({
+    page: pagination.page,
+    page_size: pagination.pageSize,
+    search: searchQuery.value,
+    ordering: currentOrdering.value
+  });
+
+  if (error.value) {
+    throw new Error(error.value);
+  }
+};
+
 onMounted(() => {
+  loadServerTasks();
+});
+
+onActivated(() => {
   loadServerTasks();
 });
 
@@ -291,27 +317,31 @@ defineExpose({
       </div>
     </div>
 
-    <div v-if="error" class="error-banner">
-      <p>{{ error }}</p>
-      <NButton type="primary" size="small" @click="loadServerTasks">Retry</NButton>
-    </div>
+    <DataFetcher :fetcher="handleFetch" v-slot="{ loading, error: fetchError, refetch }">
+      <div v-if="fetchError" class="error-banner">
+        <p>{{ fetchError.message }}</p>
+        <NButton type="primary" size="small" @click="refetch">Retry</NButton>
+      </div>
 
-    <NDataTable
-      v-else
-      remote
-      :loading="isLoading"
-      :columns="columns"
-      :data="tasks"
-      :pagination="pagination"
-      :row-key="(row) => row.id"
-      :checked-row-keys="checkedRowKeys"
-      @update:checked-row-keys="handleCheck"
-      @update:sorter="handleSorterChange"
-    >
-      <template #empty>
-        <NEmpty description="No tasks found" />
-      </template>
-    </NDataTable>
+      <NDataTable
+        v-else
+        remote
+        :loading="loading"
+        :columns="columns"
+        :data="tasks"
+        :pagination="pagination"
+        :row-key="(row) => row.id"
+        :checked-row-keys="checkedRowKeys"
+        @update:checked-row-keys="handleCheck"
+        @update:sorter="handleSorterChange"
+      >
+        <template #empty>
+          <NEmpty description="No tasks found" />
+        </template>
+      </NDataTable>
+    </DataFetcher>
+
+    <n-back-top :right="100" />
 
     <CreateTaskModal
       :open="isCreateModalOpen"
@@ -337,6 +367,7 @@ defineExpose({
     />
 
     <EditTaskModal
+      v-if="isEditModalOpen"
       :open="isEditModalOpen"
       :task="selectedTask"
       :loading="isActionLoading"

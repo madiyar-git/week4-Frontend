@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { api } from '@/api/client';
+import { useTaskStore } from '@/stores/tasks.ts';
 export const useAuthStore = defineStore('auth', () => {
   const accessToken = ref<string | null>(localStorage.getItem('access_token'));
   const refreshToken = ref<string | null>(localStorage.getItem('refresh_token'));
@@ -30,6 +31,9 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('username');
+
+    const taskStore = useTaskStore();
+    taskStore.reset();
   }
   function persist() {
     if (accessToken.value) localStorage.setItem('access_token', accessToken.value);
