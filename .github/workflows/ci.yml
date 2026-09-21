@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   frontend:
-    name: Frontend CI
+    name: Frontend CI #adsdas
     runs-on: ubuntu-latest
 
     steps:
