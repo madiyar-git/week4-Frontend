@@ -25,7 +25,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@
+
+      - name: Temporary Sleep for Cancel Test
+        run: sleep 30
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
