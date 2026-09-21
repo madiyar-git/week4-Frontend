@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: Frontend CI Pipeline
 
 on:
   push:
@@ -11,21 +11,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  backend:
-    name: Backend CI
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Run Backend Checks
-        run: echo "Running backend tests..."
-
   frontend:
     name: Frontend CI
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
