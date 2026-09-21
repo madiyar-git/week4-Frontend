@@ -2,7 +2,7 @@ name: Frontend CI Pipeline
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: [ main, master, develop, ci/github-actions ]
   pull_request:
     branches: [ main, master, develop ]
 
@@ -40,6 +40,9 @@ jobs:
 
       - name: Run Production Build
         run: npm run build
+
+      - name: Temporary Sleep for Cancel Test
+        run: sleep 60
 
       - name: Upload Frontend Coverage Report
         uses: actions/upload-artifact@v4
