@@ -29,9 +29,9 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: 'vue-project/.nvmrc'
+          node-version: '22'
           cache: 'npm'
-          cache-dependency-path: 'vue-project/package-lock.json'
+        cache-dependency-path: 'vue-project/package-lock.json'
 
       - name: Install dependencies
         run: npm ci
