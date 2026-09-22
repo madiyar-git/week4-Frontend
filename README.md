@@ -1,117 +1,50 @@
-# Task Manager Web App (Frontend)
+# vue-project
 
-Клиентская часть SPA-приложения для управления персональными задачами.
-Интерфейс полностью интегрирован с JWT-авторизацией бэкенда и поддерживает бесшовное обновление пользовательской сессии.
+This template should help get you started developing with Vue 3 in Vite.
 
----
+## Recommended IDE Setup
 
-# Стек технологий
+[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
 
-* **Фреймворк:** Vue 3 (`Composition API`, `<script setup>`)
-* **Сборщик:** Vite
-* **Язык:** TypeScript (строгая типизация без использования `any`)
-* **Управление состоянием:** Pinia
-* **Маршрутизация:** Vue Router
-* **HTTP-клиент:** Axios
-* **Авторизация:** JWT (Access + Refresh Tokens)
+## Recommended Browser Setup
 
----
+- Chromium-based browsers (Chrome, Edge, Brave, etc.):
+  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
+  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
+- Firefox:
+  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
+  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
 
-# Архитектура авторизации (JWT Flow)
+## Type Support for `.vue` Imports in TS
 
-В приложении реализована полноценная система автоматического обновления пользовательской сессии через Axios Interceptors.
+TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
 
-## 1. Автоматическая подстановка токена
+## Customize configuration
 
-`Request Interceptor` автоматически добавляет:
+See [Vite Configuration Reference](https://vite.dev/config/).
 
-```http id="vhmkh4"
-Authorization: Bearer <access_token>
-```
+## Project Setup
 
-во все защищённые API-запросы.
-
----
-
-## 2. Очередь параллельных запросов
-
-Если сервер возвращает:
-
-```http id="h7wnfq"
-401 Unauthorized
-```
-
-это означает, что `access_token` истёк.
-
-В таком случае:
-
-* новые запросы временно ставятся в очередь;
-* выполняется только один запрос на обновление токена;
-* предотвращается множественный `refresh` одновременно.
-
----
-
-## 3. Бесшовное обновление сессии
-
-Клиент автоматически отправляет запрос:
-
-```http id="ccyjlwm"
-POST /api/token/refresh/
-```
-
-Если `refresh_token` валиден:
-
-* приложение получает новый `access_token`;
-* токены обновляются в `localStorage`;
-* все замороженные запросы автоматически повторяются;
-* пользователь не теряет сессию и не замечает обновления.
-
----
-
-## 4. Защита от невалидной сессии
-
-Если `refresh_token` тоже истёк или невалиден:
-
-* `localStorage` полностью очищается;
-* Pinia-store сбрасывается;
-* пользователь автоматически перенаправляется на:
-
-```text id="v2ngh6"
-/login
-```
-
----
-
-# Локальный запуск проекта
-
-## 1. Установка зависимостей
-
-```bash id="3h6j3r"
+```sh
 npm install
 ```
 
----
+### Compile and Hot-Reload for Development
 
-## 2. Запуск development-сервера
-
-```bash id="m1sru6"
+```sh
 npm run dev
 ```
 
-После запуска приложение будет доступно по адресу:
+### Type-Check, Compile and Minify for Production
 
-```text id="zv56ty"
-http://localhost:5173/
+```sh
+npm run build
 ```
 
----
+### Run Unit Tests with [Vitest](https://vitest.dev/)
 
-## 3. Production Build
-
-Сборка проекта для продакшена:
-
-```bash id="4lk7l9"
-npm run build
+```sh
+npm run test:unit
 ```
 
 ## 🧪 Запуск тестов
