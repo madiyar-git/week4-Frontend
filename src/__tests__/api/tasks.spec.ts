@@ -35,7 +35,7 @@ describe('taskApi', () => {
     } as unknown as Awaited<ReturnType<typeof taskApi.getAll>>);
 
     await taskApi.getAll(params);
-    expect(get).toHaveBeenCalledWith('/tasks/', { params });
+    expect(get).toHaveBeenCalledWith('/task/', { params });
   });
 
   test('create creates new task', async () => {
