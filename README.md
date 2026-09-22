@@ -1,3 +1,5 @@
+[![CI Pipeline](https://github.com/madiyar-git/week4-Frontend/actions/workflows/ci.yml/badge.svg)](https://github.com/madiyar-git/week4-Frontend/actions/workflows/ci.yml)
+
 # vue-project
 
 This template should help get you started developing with Vue 3 in Vite.
