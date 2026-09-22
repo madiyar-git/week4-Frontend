@@ -13,3 +13,7 @@ app.use(pinia);
 app.use(router);
 
 app.mount('#app');
+
+window.addEventListener('vite:preloadError', (event) => {
+  window.location.reload();
+});

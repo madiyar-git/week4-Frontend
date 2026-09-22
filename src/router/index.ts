@@ -1,11 +1,13 @@
 import { useAuthStore } from '@/stores/auth';
 import { createRouter, createWebHistory } from 'vue-router';
 
+import LoginView from '@/views/LoginView.vue';
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     { path: '/', redirect: '/tasks' },
-    { path: '/login', name: 'login', component: () => import('@/views/LoginView.vue') },
+    { path: '/login', name: 'login', component: LoginView },
     { path: '/register', name: 'register', component: () => import('@/views/RegisterView.vue') },
     {
       path: '/tasks',
@@ -45,6 +47,15 @@ router.beforeEach((to) => {
 
   if ((to.path === '/login' || to.path === '/register') && auth.isAuthenticated) {
     return '/tasks';
+  }
+});
+
+router.onError((error, to) => {
+  if (
+    error.message.includes('Failed to fetch dynamically imported module') ||
+    error.message.includes('Importing a module script failed')
+  ) {
+    window.location.assign(to.fullPath);
   }
 });
 
