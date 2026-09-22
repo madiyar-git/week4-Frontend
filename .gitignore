@@ -39,3 +39,10 @@ __screenshots__/
 # Test coverage
 coverage/
 *.lcov
+
+# Environment files
+.env
+.env.development
+.env.production
+.env.local
+*.local
