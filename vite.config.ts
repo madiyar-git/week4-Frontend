@@ -18,13 +18,14 @@ export default defineConfig(({ mode }) => {
         resolvers: [NaiveUiResolver()],
         dts: 'src/components.d.ts'
       }),
-      visualizer({
-        filename: 'stats.html',
-        open: true,
-        gzipSize: true,
-        brotliSize: true
-      })
-    ],
+      env.ANALYZE === 'true' &&
+        visualizer({
+          filename: 'stats.html',
+          open: true,
+          gzipSize: true,
+          brotliSize: true
+        })
+    ].filter(Boolean),
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url))
