@@ -1,4 +1,6 @@
-# Task Manager Web App (Frontend)
+[![CI Pipeline](https://github.com/madiyar-git/week4-Frontend/actions/workflows/ci.yml/badge.svg)](https://github.com/madiyar-git/week4-Frontend/actions/workflows/ci.yml)
+
+# vue-project
 
 Клиентская часть SPA-приложения для управления персональными задачами.
 Интерфейс полностью интегрирован с JWT-авторизацией бэкенда и поддерживает бесшовное обновление пользовательской сессии.

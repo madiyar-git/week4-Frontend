@@ -13,6 +13,7 @@ export default defineConfig((configEnv) => {
         environment: 'jsdom',
         exclude: [...configDefaults.exclude, 'e2e/**', '**/dist/**'],
         root: fileURLToPath(new URL('./', import.meta.url)),
+        setupFiles: ['./src/__tests__/setup.ts'],
         coverage: {
           provider: 'v8',
           reporter: ['text', 'html', 'json'],
