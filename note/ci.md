@@ -1,49 +1,81 @@
-# CI/CD Rules and Policies
+# 🚀 Отчёт по настройке CI/CD и защиты веток (Branch Protection)
 
-## ESLint Warning Policy
+## 1. Статус Пайплайнов (CI Badges)
 
-- **Правило:** CI-пайплайн падает при наличии **любых** предупреждений ESLint (`--max-warnings 0`).
-- **Причина:** Предупреждения в CI часто игнорируются разработчиками и со временем накапливаются, превращаясь в «технический долг». Если правило ESLint действительно необходимо временно обойти, используйте локальные комментарии `// eslint-disable-next-line` с явным обоснованием в PR.
+| Репозиторий  | Статус CI Пайплайна                                                                                                                                                        |
+| :----------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Backend**  | [![CI Pipeline](https://github.com/madiyar-git/Week4_Backend/actions/workflows/ci.yml/badge.svg)](https://github.com/madiyar-git/Week4_Backend/actions/workflows/ci.yml)   |
+| **Frontend** | [![CI Pipeline](https://github.com/madiyar-git/week4-Frontend/actions/workflows/ci.yml/badge.svg)](https://github.com/madiyar-git/week4-Frontend/actions/workflows/ci.yml) |
 
-# Отчет об оптимизации и настройке CI Пайплайна
+---
 
-## 1. Проверка кэширования (Pip и NPM)
+## 2. Конфигурация защиты ветки main (Branch Protection Rules)
 
-- **Результат:** Кэширование успешно настроено и срабатывает (`Cache hit`).
-- **Подтверждение из логов:**
-  - **Backend:** `Cache hit for: setup-python...` и `Cache restored successfully` (архив зависимостей ~52 MB восстанавливается напрямую из кэша GitHub Actions).
-  - **Frontend:** `Cache hit occurred on the primary key node-cache-...`.
-- **Эффект:** Время шагов установки зависимостей (`pip install` / `npm ci`) сократилось с 35–45 секунд до 5–10 секунд.
+Для обоих репозиториев (`Week4_Backend` и `week4-Frontend`) настроены следующие правила защиты основной ветки `main`:
 
-## 2. Отмена устаревших прогонов (Concurrency)
+1. **Require a pull request before merging**: Прямой пуш в ветку `main` заблокирован. Все изменения обязаны проходить через Pull Request.
+2. **Require status checks to pass before merging**: Мёрж Pull Request заблокирован до тех пор, пока не завершатся успехом обязательные CI-проверки.
+3. **Require branches to be up to date before merging**: Ветка PR должна содержать актуальный код из `main`.
+4. **Do not allow bypassing the above settings**: Правила распространяются на всех участников, включая администраторов репозитория.
+5. **Block force pushes & Prevent branch deletion**: Запрещён форс-пуш (`git push --force`) и удаление ветки `main`.
 
-- **Настройка:** Добавлен универсальный блок `concurrency` с динамической группировкой и автоматической отменой:
+---
 
-```yaml
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+## 3. Подтверждение блокировки прямого пуша (Логи ошибок GH006)
+
+### Бэкенд (Week4_Backend)
+
+```
+$ git push origin main
+Enumerating objects: 13, done.
+Counting objects: 100% (13/13), done.
+Writing objects: 100% (10/10), 1.41 KiB | 288.00 KiB/s, done.
+remote: error: GH006: Protected branch update failed for refs/heads/main.
+remote:
+remote: - Changes must be made through a pull request.
+remote:
+remote: - 2 of 2 required status checks are expected.
+To [https://github.com/madiyar-git/Week4_Backend.git](https://github.com/madiyar-git/Week4_Backend.git)
+ ! [remote rejected] main -> main (protected branch hook declined)
+error: failed to push some refs to '[https://github.com/madiyar-git/Week4_Backend.git](https://github.com/madiyar-git/Week4_Backend.git)'
 ```
 
-- **Тестирование:** Выполнено ручное тестирование с несколькими быстрыми пушами. На вкладке **Actions** зафиксирована успешная отмена предыдущих незавершённых прогонов со статусом `Cancelled`.
+### Фронтенд (week4-Frontend)
 
-## 3. Джоба сборки Docker-образа (`docker-build`)
+```
+$ git push origin main
+Enumerating objects: 8, done.
+Counting objects: 100% (8/8), done.
+Writing objects: 100% (6/6), 1.06 KiB | 542.00 KiB/s, done.
+remote: error: GH006: Protected branch update failed for refs/heads/main.
+remote:
+remote: - Changes must be made through a pull request.
+remote:
+remote: - Required status check "Frontend CI" is expected.
+To [https://github.com/madiyar-git/week4-Frontend.git](https://github.com/madiyar-git/week4-Frontend.git)
+ ! [remote rejected] main -> main (protected branch hook declined)
+error: failed to push some refs to '[https://github.com/madiyar-git/week4-Frontend.git](https://github.com/madiyar-git/week4-Frontend.git)'
+```
 
-- **Настройка:** Добавлена джоба проверки сборки Docker-образа без публикации (`push: false`) с использованием `docker/build-push-action@v6` и встроенного кэша `type=gha`.
-- **Принятое решение:** Джоба выполняется **параллельно** с основными проверками (без аргумента `needs`).
-- **Аргумент:** Параллельный запуск минимизирует общее время выполнения всего пайплайна (Total Pipeline Time), так как сборка образа и запуск тестов происходят одновременно.
+---
 
-## 4. Стандартизация Docker Compose
+## 4. Обязательные проверки (Required Status Checks)
 
-- Перешли на **Docker Compose v2** (`docker compose` без дефиса), так как старая утилита `docker-compose` устарела на раннерах `ubuntu-latest`.
-- В `Makefile` все вхождения `docker-compose` заменены на `docker compose`.
+В настройках репозиториев в качестве обязательных статус-чеков привязаны следующие джобы GitHub Actions:
 
-## 5. Выбор относительно `paths-ignore`
+- **Backend:** `backend` / `Build Docker Image (Backend)`
+- **Frontend:** `Frontend CI Pipeline / Frontend CI (pull_request)`
 
-- **Принятое решение:** **НЕ использовать `paths-ignore`** для файлов `*.md` и `notes/**`.
-- **Обоснование (Ловушка):** При включении обязательных проверок (Required Status Checks) в правилах защиты веток (Branch Protection Rules), PR содержащий только изменения в документации полностью пропустит запуск workflow и навсегда зависнет в ожидании ответа от CI (`Expected — Waiting for status to be reported`).
+---
 
-## 6. Сравнение времени пайплайна
+## 5. Проверка сценария «Красный → Зелёный CI»
 
-- **Время до оптимизации:** ~2 мин 15 сек (без кэширования, последовательные запуски, лишние прогоны не отменялись).
-- **Время после оптимизации:** ~45–50 сек (с работающим кэшем pip/npm, Docker-кэшем gha и авто-отменой устаревших запусков).
+1. **Тест со сбоем (Красный CI):**
+
+- При внесении ошибочного кода или падающих тестов в отдельную ветку и открытии PR, статус-чек GitHub Actions завершается ошибкой.
+- Кнопка **Merge pull request** автоматически блокируется с причиной `Required status checks failed`.
+
+2. **Исправление кода (Зелёный CI):**
+
+- После исправления упавших тестов локально и отправки нового коммита в ветку PR, GitHub Actions автоматически перезапускает проверку.
+- После успешного прохождения проверки (`All checks have passed`) кнопка **Merge pull request** становится активной для мёржа.

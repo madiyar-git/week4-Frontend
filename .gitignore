@@ -41,3 +41,10 @@ coverage/
 *.lcov
 #pollup visualizer
 stats.html
+
+# Environment files
+.env
+.env.development
+.env.production
+.env.local
+*.local

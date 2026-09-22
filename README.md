@@ -1,5 +1,3 @@
-[![CI Pipeline](https://github.com/madiyar-git/week4-Frontend/actions/workflows/ci.yml/badge.svg)](https://github.com/madiyar-git/week4-Frontend/actions/workflows/ci.yml)
-
 # vue-project
 
 Клиентская часть SPA-приложения для управления персональными задачами.
