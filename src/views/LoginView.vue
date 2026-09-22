@@ -80,6 +80,7 @@ onMounted(() => {
           label="Username"
           placeholder="Enter your username"
           autocomplete="username"
+          :error="error"
         />
 
         <BaseInput
