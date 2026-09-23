@@ -22,6 +22,7 @@ declare module 'vue' {
     CreateTaskModal: typeof import('./components/CreateTaskModal.vue')['default']
     DataFetcher: typeof import('./components/DataFetcher.vue')['default']
     EditTaskModal: typeof import('./components/EditTaskModal.vue')['default']
+    ManualVirtualList: typeof import('./components/ManualVirtualList.vue')['default']
     NBackTop: typeof import('naive-ui')['NBackTop']
     NButton: typeof import('naive-ui')['NButton']
     NCard: typeof import('naive-ui')['NCard']

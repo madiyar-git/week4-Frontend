@@ -39,6 +39,11 @@ const router = createRouter({
       path: '/tasks/stats',
       name: 'use-api-demo',
       component: () => import('@/views/dev/UseApiDemo.vue')
+    },
+    {
+      path: '/tasks/virtual',
+      name: 'virtual-list-demo',
+      component: () => import('@/views/dev/VirtualListDemo.vue')
     }
   ]
 });
