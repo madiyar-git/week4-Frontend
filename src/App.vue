@@ -3,13 +3,16 @@ import { RouterLink, RouterView, useRouter } from 'vue-router';
 import { useAuthStore } from './stores/auth';
 import { storeToRefs } from 'pinia';
 import { useTaskStore } from './stores/tasks';
+import { useLoadingStore } from './stores/loading';
 import { NConfigProvider, NGlobalStyle, darkTheme, type GlobalThemeOverrides } from 'naive-ui';
 
 const router = useRouter();
 const authStore = useAuthStore();
 const tasksStore = useTaskStore();
+const loadingStore = useLoadingStore();
 
 const { isAuthenticated, username } = storeToRefs(authStore);
+const { isLoading } = storeToRefs(loadingStore);
 const { logout } = authStore;
 
 function handleLogout(): void {
@@ -62,11 +65,12 @@ const themeOverrides: GlobalThemeOverrides = {
         </nav>
       </header>
 
-      <RouterView />
+      <n-spin :show="isLoading" description="Loading...">
+        <RouterView />
+      </n-spin>
     </main>
   </NConfigProvider>
 </template>
-
 <style>
 html,
 body {

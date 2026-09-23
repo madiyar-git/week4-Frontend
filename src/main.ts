@@ -14,6 +14,6 @@ app.use(router);
 
 app.mount('#app');
 
-window.addEventListener('vite:preloadError', (event) => {
+window.addEventListener('vite:preloadError', (_event) => {
   window.location.reload();
 });
