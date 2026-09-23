@@ -35,6 +35,7 @@ declare module 'vue' {
     RouterView: typeof import('vue-router')['RouterView']
     TaskCard: typeof import('./components/TaskCard.vue')['default']
     TaskList: typeof import('./components/TaskList.vue')['default']
+    TaskRow: typeof import('./components/TaskRow.vue')['default']
     TasksTable: typeof import('./components/TasksTable.vue')['default']
   }
 }

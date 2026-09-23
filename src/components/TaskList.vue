@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { NPagination } from 'naive-ui';
-import type { Task } from '../types/task';
+import type { Task } from '@/types/task';
 import { useTaskStore } from '@/stores/tasks';
 import BaseButton from '@/components/base/BaseButton.vue';
 import TaskCard from './TaskCard.vue';
@@ -17,10 +17,15 @@ const { tasks, totalCount, searchQuery } = storeToRefs(taskStore);
 
 const page = ref(1);
 const pageSize = ref(10);
+const selectedId = ref<number | null>(null);
 
 const completedCount = computed(() => {
   return tasks.value.filter((t) => t.completed).length;
 });
+
+function handleSelect(id: number) {
+  selectedId.value = id;
+}
 
 async function handleUpdateTask(id: number, fields: Partial<Task>) {
   await taskStore.updateTask(id, fields);
@@ -87,9 +92,12 @@ function handlePageSizeChange(newPageSize: number) {
 
     <div v-if="tasks.length > 0" class="task-list">
       <TaskCard
-        v-for="(task, index) in tasks"
+        v-for="task in tasks"
         :key="task.id"
-        v-model="tasks[index]!"
+        :model-value="task"
+        :class="{ selected: task.id === selectedId }"
+        v-memo="[task.id, task.completed, task.title, task.priority, task.id === selectedId]"
+        @click="handleSelect(task.id)"
         @delete="handleDeleteTask"
         @update="handleUpdateTask"
         @edit="$emit('edit', $event)"
