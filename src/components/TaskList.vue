@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { storeToRefs } from 'pinia';
-import { NPagination } from 'naive-ui';
-import type { Task } from '../types/task';
+import { NPagination, NSkeleton } from 'naive-ui';
+import type { Task } from '@/types/task';
 import { useTaskStore } from '@/stores/tasks';
 import BaseButton from '@/components/base/BaseButton.vue';
 import TaskCard from './TaskCard.vue';
@@ -13,14 +13,20 @@ defineEmits<{
 }>();
 
 const taskStore = useTaskStore();
-const { tasks, totalCount, searchQuery } = storeToRefs(taskStore);
+
+const { tasks, totalCount, searchQuery, isLoading } = storeToRefs(taskStore);
 
 const page = ref(1);
 const pageSize = ref(10);
+const selectedId = ref<number | null>(null);
 
 const completedCount = computed(() => {
   return tasks.value.filter((t) => t.completed).length;
 });
+
+function handleSelect(id: number) {
+  selectedId.value = id;
+}
 
 async function handleUpdateTask(id: number, fields: Partial<Task>) {
   await taskStore.updateTask(id, fields);
@@ -85,11 +91,25 @@ function handlePageSizeChange(newPageSize: number) {
       </div>
     </div>
 
-    <div v-if="tasks.length > 0" class="task-list">
+    <div v-if="isLoading" class="task-list">
+      <div v-for="n in pageSize" :key="n" class="skeleton-card">
+        <NSkeleton height="20px" width="60%" radius="4px" />
+        <NSkeleton height="14px" width="90%" radius="4px" />
+        <div class="skeleton-footer">
+          <NSkeleton height="24px" width="70px" radius="12px" />
+          <NSkeleton height="24px" width="50px" radius="4px" />
+        </div>
+      </div>
+    </div>
+
+    <div v-else-if="tasks.length > 0" class="task-list">
       <TaskCard
-        v-for="(task, index) in tasks"
+        v-for="task in tasks"
         :key="task.id"
-        v-model="tasks[index]!"
+        :model-value="task"
+        :class="{ selected: task.id === selectedId }"
+        v-memo="[task.id, task.completed, task.title, task.priority, task.id === selectedId]"
+        @click="handleSelect(task.id)"
         @delete="handleDeleteTask"
         @update="handleUpdateTask"
         @edit="$emit('edit', $event)"
@@ -107,6 +127,7 @@ function handlePageSizeChange(newPageSize: number) {
         />
       </div>
     </div>
+
     <p v-else class="empty-state">No tasks yet</p>
   </div>
 </template>
@@ -116,6 +137,7 @@ function handlePageSizeChange(newPageSize: number) {
   width: 100%;
   max-width: 450px;
   margin: 0 auto;
+  min-height: 650px;
 }
 
 .stats-panel {
@@ -150,6 +172,23 @@ function handlePageSizeChange(newPageSize: number) {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.skeleton-card {
+  background: #181818;
+  border: 1px solid #282828;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skeleton-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
 }
 
 .empty-state {

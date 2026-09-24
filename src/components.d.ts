@@ -22,6 +22,7 @@ declare module 'vue' {
     CreateTaskModal: typeof import('./components/CreateTaskModal.vue')['default']
     DataFetcher: typeof import('./components/DataFetcher.vue')['default']
     EditTaskModal: typeof import('./components/EditTaskModal.vue')['default']
+    ManualVirtualList: typeof import('./components/ManualVirtualList.vue')['default']
     NBackTop: typeof import('naive-ui')['NBackTop']
     NButton: typeof import('naive-ui')['NButton']
     NCard: typeof import('naive-ui')['NCard']
@@ -29,10 +30,12 @@ declare module 'vue' {
     NFormItem: typeof import('naive-ui')['NFormItem']
     NInput: typeof import('naive-ui')['NInput']
     NSelect: typeof import('naive-ui')['NSelect']
+    NSpin: typeof import('naive-ui')['NSpin']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     TaskCard: typeof import('./components/TaskCard.vue')['default']
     TaskList: typeof import('./components/TaskList.vue')['default']
+    TaskRow: typeof import('./components/TaskRow.vue')['default']
     TasksTable: typeof import('./components/TasksTable.vue')['default']
   }
 }
