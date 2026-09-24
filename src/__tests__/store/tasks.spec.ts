@@ -78,8 +78,8 @@ describe('useTaskStore', () => {
 
     async function setSearchQuery(query: string) {
       store.searchQuery = query;
-      await nextTick(); // Ждем, пока Vue запустит watch и зарегистрирует setTimeout
-      vi.advanceTimersByTime(300); // Прокручиваем таймер на 300мс
+      await nextTick();
+      vi.advanceTimersByTime(300);
     }
 
     await setSearchQuery('');
