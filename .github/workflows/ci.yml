@@ -48,3 +48,23 @@ jobs:
           name: frontend-coverage
           path: coverage/
           retention-days: 7
+
+  deploy:
+    name: CD Deployment Simulation
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [ frontend ]
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: ShellCheck Linting
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scans: scripts
+
+      - name: Make Script Executable
+        run: chmod +x scripts/deploy.sh
+
+      - name: Run Deploy Script (Dry Run)
+        run: ./scripts/deploy.sh production --dry-run
