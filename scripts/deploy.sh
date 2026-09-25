@@ -72,4 +72,4 @@ else
 fi
 
 echo "--------------------------------------------------------"
-echo "🎉 Frontend Deployment to [$ENVIRONMENT] finished successfully!"
+echo " Frontend Deployment to [$ENVIRONMENT] finished successfully!"
