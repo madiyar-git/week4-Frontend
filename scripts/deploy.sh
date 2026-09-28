@@ -37,7 +37,7 @@ done
 
 echo " Starting Frontend deployment to environment: [$ENVIRONMENT]"
 if [ "$DRY_RUN" = true ]; then
-    echo "ℹ️  RUNNING IN DRY-RUN MODE"
+    echo " RUNNING IN DRY-RUN MODE"
 fi
 echo "--------------------------------------------------------"
 
