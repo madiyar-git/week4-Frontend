@@ -3,6 +3,7 @@ import { setActivePinia, createPinia } from 'pinia';
 import { useTaskStore } from '@/stores/tasks';
 import { taskApi, type CreateTaskDto } from '@/api/tasks';
 import type { Task } from '@/types/task';
+import { nextTick } from 'vue';
 
 vi.mock('@/api/tasks', () => ({
   taskApi: {
@@ -45,7 +46,9 @@ describe('useTaskStore', () => {
     vi.clearAllMocks();
   });
 
-  test('filteredTasks handles search queries, missing fields, and filter states', () => {
+  test('filteredTasks handles search queries, missing fields, and filter states', async () => {
+    vi.useFakeTimers();
+
     const store = useTaskStore();
     const storeRecord = store as unknown as Record<string, unknown>;
 
@@ -73,22 +76,28 @@ describe('useTaskStore', () => {
       })
     ];
 
-    store.searchQuery = '';
+    async function setSearchQuery(query: string) {
+      store.searchQuery = query;
+      await nextTick();
+      vi.advanceTimersByTime(300);
+    }
+
+    await setSearchQuery('');
     expect(store.filteredTasks).toBeDefined();
 
-    store.searchQuery = 'bug';
+    await setSearchQuery('bug');
     expect(store.filteredTasks).toHaveLength(1);
 
-    store.searchQuery = 'milk';
+    await setSearchQuery('milk');
     expect(store.filteredTasks).toHaveLength(1);
 
-    store.searchQuery = 'book';
+    await setSearchQuery('book');
     expect(store.filteredTasks).toHaveLength(1);
 
-    store.searchQuery = 'nonexistent';
+    await setSearchQuery('nonexistent');
     expect(store.filteredTasks).toHaveLength(0);
 
-    store.searchQuery = '';
+    await setSearchQuery('');
 
     const filterProps = ['statusFilter', 'priorityFilter', 'status', 'priority', 'filter'];
     const filterValues = ['all', 'completed', 'active', 'pending', 'high', 'medium', 'low'];
@@ -101,6 +110,7 @@ describe('useTaskStore', () => {
         }
       }
     }
+    vi.useRealTimers();
   });
 
   test('fetchTasks handles loading state, data mapping, and failure branches', async () => {

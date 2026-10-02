@@ -3,33 +3,16 @@ import { RouterLink, RouterView, useRouter } from 'vue-router';
 import { useAuthStore } from './stores/auth';
 import { storeToRefs } from 'pinia';
 import { useTaskStore } from './stores/tasks';
+import { useLoadingStore } from './stores/loading';
 import { NConfigProvider, NGlobalStyle, darkTheme, type GlobalThemeOverrides } from 'naive-ui';
 
 const router = useRouter();
 const authStore = useAuthStore();
 const tasksStore = useTaskStore();
-
-tasksStore.$subscribe((mutation, state) => {
-  console.log(`[Pinia Mutation]: ${mutation.type}`, mutation);
-  localStorage.setItem('tasks_search_query', state.searchQuery);
-});
-
-tasksStore.$onAction(({ name, args, after, onError }) => {
-  const startTime = performance.now();
-  console.log(`[Action Start]: ${name}`, args);
-
-  after(() => {
-    const duration = (performance.now() - startTime).toFixed(2);
-    console.log(`[Action Success]: ${name} executed in ${duration}ms`);
-  });
-
-  onError((error) => {
-    const duration = (performance.now() - startTime).toFixed(2);
-    console.error(`[Action Error]: ${name} failed after ${duration}ms`, error);
-  });
-});
+const loadingStore = useLoadingStore();
 
 const { isAuthenticated, username } = storeToRefs(authStore);
+const { isLoading } = storeToRefs(loadingStore);
 const { logout } = authStore;
 
 function handleLogout(): void {
@@ -82,11 +65,12 @@ const themeOverrides: GlobalThemeOverrides = {
         </nav>
       </header>
 
-      <RouterView />
+      <n-spin :show="isLoading" description="Loading...">
+        <RouterView />
+      </n-spin>
     </main>
   </NConfigProvider>
 </template>
-
 <style>
 html,
 body {

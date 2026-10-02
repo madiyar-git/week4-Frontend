@@ -1,7 +1,3 @@
-Пагинация не работала, потому что в Naive UI свойства `page` и `pageSize` работают в
-**контролируемом режиме**. Когда вы кликали по кнопкам, компонент не мог самостоятельно изменить
-значения в объекте `pagination` — ему требовались колбэки `onChange` и `onUpdatePageSize`. ###
-Исправленный `TasksTable.vue` ```vue
 <script setup lang="ts">
 import { ref, reactive, onMounted, watch, h, onActivated, defineAsyncComponent } from 'vue';
 import { storeToRefs } from 'pinia';
