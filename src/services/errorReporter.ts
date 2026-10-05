@@ -1,3 +1,5 @@
+import { logger } from '@/services/logger.ts';
+
 export interface ErrorContext {
   component?: string;
   info?: string;
@@ -7,6 +9,7 @@ export interface ErrorContext {
 
 export function reportError(error: unknown, context: ErrorContext = {}): string {
   const errorCode = 'ERR-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+  const errorMessage = error instanceof Error ? error.message : String(error);
 
   const errorDetails = {
     code: errorCode,
@@ -15,8 +18,8 @@ export function reportError(error: unknown, context: ErrorContext = {}): string 
     timestamp: new Date().toISOString(),
     ...context
   };
-  /* eslint-disable no-console */
-  console.error(`[ErrorReporter] [${errorCode}]`, errorDetails);
-  /* eslint-enable no-console */
+
+  logger.error(`[ErrorReporter] ${errorMessage}`, errorDetails);
+
   return errorCode;
 }
