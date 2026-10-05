@@ -39,6 +39,8 @@ __screenshots__/
 # Test coverage
 coverage/
 *.lcov
+#pollup visualizer
+stats.html
 
 # Environment files
 .env

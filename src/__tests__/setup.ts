@@ -1,5 +1,5 @@
 import { config } from '@vue/test-utils';
-import { vi } from 'vitest';
+import { vi, beforeEach } from 'vitest';
 
 config.global.stubs = {
   'n-button': true,
@@ -31,3 +31,13 @@ Object.defineProperty(window, 'localStorage', {
 });
 
 vi.stubGlobal('localStorage', localStorageMock);
+
+beforeEach(() => {
+  localStorage.clear();
+  vi.clearAllMocks();
+});
+
+vi.stubGlobal(
+  'fetch',
+  vi.fn(() => Promise.reject(new Error('Network request blocked in test environment. Use mocks!')))
+);

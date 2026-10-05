@@ -86,6 +86,7 @@ const processQueue = (error: unknown | null = null): void => {
   queue = [];
 };
 
+//XXX Перехватчик ответов из сервера
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {

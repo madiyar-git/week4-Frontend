@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
+import { ref, shallowRef, computed, watch } from 'vue';
 import type { DataTableRowKey } from 'naive-ui';
 import type { Task } from '@/types/task';
 import { taskApi, type CreateTaskDto, type UpdateTaskDto, type TaskQueryParams } from '@/api/tasks';
@@ -8,7 +8,8 @@ import { formatErrorMessage } from '@/api/errorHandler';
 
 export const useTaskStore = defineStore('tasks', () => {
   const notify = useNotify();
-  const tasks = ref<Task[]>([]);
+
+  const tasks = shallowRef<Task[]>([]);
   const totalCount = ref<number>(0);
   const isLoading = ref<boolean>(false);
   const error = ref<string | null>(null);
@@ -16,9 +17,21 @@ export const useTaskStore = defineStore('tasks', () => {
   const searchQuery = ref<string>(localStorage.getItem('tasks_search_query') || '');
   const checkedRowKeys = ref<DataTableRowKey[]>([]);
 
+  const debouncedSearchQuery = ref<string>(searchQuery.value);
+  let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  watch(searchQuery, (newVal) => {
+    if (searchTimeout) clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      debouncedSearchQuery.value = newVal;
+      localStorage.setItem('tasks_search_query', newVal);
+    }, 300);
+  });
+
   const filteredTasks = computed(() => {
-    if (!searchQuery.value.trim()) return tasks.value;
-    const q = searchQuery.value.toLowerCase().trim();
+    const q = debouncedSearchQuery.value.toLowerCase().trim();
+    if (!q) return tasks.value;
+
     return tasks.value.filter((task) => {
       const matchTitle = task.title.toLowerCase().includes(q);
       const matchDesc = task.description?.toLowerCase().includes(q) ?? false;
@@ -136,6 +149,7 @@ export const useTaskStore = defineStore('tasks', () => {
     error.value = null;
     isLoading.value = false;
     searchQuery.value = '';
+    debouncedSearchQuery.value = '';
     checkedRowKeys.value = [];
   }
 
@@ -145,6 +159,7 @@ export const useTaskStore = defineStore('tasks', () => {
     isLoading,
     error,
     searchQuery,
+    debouncedSearchQuery,
     checkedRowKeys,
     filteredTasks,
     fetchTasks,

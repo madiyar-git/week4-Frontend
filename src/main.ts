@@ -31,6 +31,7 @@ router.onError((err) => {
 
 window.addEventListener('vite:preloadError', (event: Event) => {
   reportError((event as CustomEvent).detail, { info: 'Vite Preload Error' });
+  window.location.reload();
 });
 
 window.addEventListener('error', (event) => {

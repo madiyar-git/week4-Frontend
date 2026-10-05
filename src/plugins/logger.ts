@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import type { PiniaPluginContext } from 'pinia';
 
 const SENSITIVE_KEYS = ['password', 'token', 'access', 'refresh', 'secret'];
