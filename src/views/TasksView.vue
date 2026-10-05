@@ -8,6 +8,7 @@ import TasksTable from '@/components/TasksTable.vue';
 import { useSaveInClipBoard } from '@/composables/useSaveInClipBoard';
 import AsyncLoading from '@/components/base/AsyncLoading.vue';
 import AsyncError from '@/components/base/AsyncError.vue';
+import ErrorBoundary from '@/components/ErrorBoundary.vue';
 
 interface Tab {
   key: string;
@@ -93,14 +94,16 @@ watch(
         </div>
       </div>
 
-      <KeepAlive :max="2">
-        <component
-          :is="activeTab?.component"
-          :key="activeTab?.key"
-          v-bind="tabProps"
-          ref="activeComponentRef"
-        />
-      </KeepAlive>
+      <ErrorBoundary :componentName="`Tab-${activeTabKey}`">
+        <KeepAlive :max="2">
+          <component
+            :is="activeTab?.component"
+            :key="activeTab?.key"
+            v-bind="tabProps"
+            ref="activeComponentRef"
+          />
+        </KeepAlive>
+      </ErrorBoundary>
     </div>
   </main>
 </template>
