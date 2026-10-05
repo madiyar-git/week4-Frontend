@@ -26,8 +26,7 @@ describe('Error Handling and Monitoring System', () => {
         .spyOn(errorReporterModule, 'reportError')
         .mockReturnValue('ERR-TEST-123');
 
-      const originalConsoleError = console.error;
-      console.error = vi.fn();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       const wrapper = mount(ErrorBoundary, {
         props: { componentName: 'TestTableWidget' },
@@ -38,7 +37,7 @@ describe('Error Handling and Monitoring System', () => {
 
       await wrapper.vm.$nextTick();
 
-      console.error = originalConsoleError;
+      consoleSpy.mockRestore();
 
       expect(wrapper.text()).toContain('An error occurred while loading the widget.');
       expect(wrapper.text()).toContain('Widget render crash test');

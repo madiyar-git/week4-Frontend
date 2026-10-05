@@ -15,7 +15,8 @@ export function reportError(error: unknown, context: ErrorContext = {}): string 
     timestamp: new Date().toISOString(),
     ...context
   };
-
+  /* eslint-disable no-console */
   console.error(`[ErrorReporter] [${errorCode}]`, errorDetails);
+  /* eslint-enable no-console */
   return errorCode;
 }

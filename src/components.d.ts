@@ -31,10 +31,12 @@ declare module 'vue' {
     NFormItem: typeof import('naive-ui')['NFormItem']
     NInput: typeof import('naive-ui')['NInput']
     NSelect: typeof import('naive-ui')['NSelect']
+    NSpin: typeof import('naive-ui')['NSpin']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     TaskCard: typeof import('./components/TaskCard.vue')['default']
     TaskList: typeof import('./components/TaskList.vue')['default']
+    TaskRow: typeof import('./components/TaskRow.vue')['default']
     TasksTable: typeof import('./components/TasksTable.vue')['default']
   }
 }
