@@ -54,7 +54,9 @@ class LocalLogger {
       const trimmed = buffer.slice(-MAX_BUFFER_SIZE);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
     } catch (e) {
+      /* eslint-disable no-console */
       console.error('[Logger] Failed to save logs to localStorage', e);
+       
     }
   }
 
