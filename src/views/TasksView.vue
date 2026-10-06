@@ -94,16 +94,21 @@ watch(
         </div>
       </div>
 
-      <ErrorBoundary :componentName="`Tab-${activeTabKey}`">
-        <KeepAlive :max="2">
-          <component
-            :is="activeTab?.component"
-            :key="activeTab?.key"
-            v-bind="tabProps"
-            ref="activeComponentRef"
-          />
-        </KeepAlive>
-      </ErrorBoundary>
+      <div class="tab-content-wrapper">
+        <ErrorBoundary :componentName="`Tab-${activeTabKey}`">
+          <KeepAlive :max="2">
+            <Transition name="fade">
+              <component
+                :is="activeTab?.component"
+                :key="activeTab?.key"
+                v-bind="tabProps"
+                ref="activeComponentRef"
+                class="tab-pane"
+              />
+            </Transition>
+          </KeepAlive>
+        </ErrorBoundary>
+      </div>
     </div>
   </main>
 </template>
@@ -138,6 +143,7 @@ h2 {
   display: flex;
   justify-content: flex-end;
   margin-bottom: 16px;
+  min-height: 40px;
 }
 
 .tabs-nav {
@@ -147,6 +153,7 @@ h2 {
   padding: 4px;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.25s ease-in-out;
 }
 
 .tab-btn {
@@ -161,19 +168,57 @@ h2 {
   font-size: 0.875rem;
   border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease,
+    transform 0.15s ease;
 }
 
 .tab-btn:hover {
   color: #ffffff;
 }
 
+.tab-btn:active {
+  transform: scale(0.97);
+}
+
 .tab-btn.active {
   background-color: #1ed760;
   color: #000000;
 }
-
 .tab-icon {
   font-size: 0.95rem;
+}
+
+.tab-content-wrapper {
+  position: relative;
+  width: 1000px;
+  max-width: 100%;
+}
+
+.tab-pane {
+  width: 1000px;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
+}
+
+.fade-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.fade-leave-to {
+  opacity: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translateY(-6px);
 }
 </style>
