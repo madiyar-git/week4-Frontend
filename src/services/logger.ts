@@ -56,7 +56,6 @@ class LocalLogger {
     } catch (e) {
       /* eslint-disable no-console */
       console.error('[Logger] Failed to save logs to localStorage', e);
-       
     }
   }
 
