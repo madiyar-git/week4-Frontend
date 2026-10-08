@@ -1,4 +1,5 @@
 import axios, { AxiosError, type AxiosRequestConfig, type InternalAxiosRequestConfig } from 'axios';
+import { reportError } from '@/services/errorReporter';
 
 export interface ApiResponse<T> {
   data: T;
@@ -7,12 +8,11 @@ export interface ApiResponse<T> {
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
-  timeout: 30000
+  timeout: 5000
 });
 
 export async function apiResponse<T>(config: AxiosRequestConfig): Promise<T> {
   const response: ApiResponse<T> = await api(config);
-
   return response.data;
 }
 
@@ -91,77 +91,85 @@ api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const status = error.response?.status;
     const isLoginRequest =
-      originalRequest?.url?.includes('/token/') && !originalRequest.url.includes('/refresh/'); //XXX Игнор авторизации
-
-    if (
-      error.response?.status !== 401 ||
-      !originalRequest ||
-      originalRequest._retry ||
-      isLoginRequest
-    ) {
-      return Promise.reject(error);
-    }
+      originalRequest?.url?.includes('/token/') && !originalRequest.url.includes('/refresh/');
 
     const isAuthEndpoint =
-      originalRequest.url?.includes('token') ||
-      originalRequest.url?.includes('login') ||
-      originalRequest.url?.includes('auth');
+      originalRequest?.url?.includes('token') ||
+      originalRequest?.url?.includes('login') ||
+      originalRequest?.url?.includes('auth');
 
-    if (isAuthEndpoint) {
-      return Promise.reject(error);
-    }
+    if (
+      status === 401 &&
+      originalRequest &&
+      !originalRequest._retry &&
+      !isLoginRequest &&
+      !isAuthEndpoint &&
+      !originalRequest.url?.includes('token/')
+    ) {
+      originalRequest._retry = true;
 
-    if (originalRequest.url?.includes('token/')) {
-      return Promise.reject(error);
-    }
-
-    originalRequest._retry = true;
-
-    if (isRefreshing) {
-      try {
-        await new Promise<void>((resolve, reject) => {
-          queue.push({ resolve, reject });
-        });
-        const token = localStorage.getItem('access_token');
-        if (token && originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${token}`;
+      if (isRefreshing) {
+        try {
+          await new Promise<void>((resolve, reject) => {
+            queue.push({ resolve, reject });
+          });
+          const token = localStorage.getItem('access_token');
+          if (token && originalRequest.headers) {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+          }
+          return api(originalRequest);
+        } catch (err) {
+          return Promise.reject(err);
         }
+      }
+
+      isRefreshing = true;
+
+      try {
+        const refresh = localStorage.getItem('refresh_token');
+        if (!refresh) {
+          throw new Error('No refresh token available.');
+        }
+        interface RefreshResponse {
+          access: string;
+        }
+        const refreshUrl = `${import.meta.env.VITE_API_URL || ''}/token/refresh/`;
+        const { data } = await axios.post<RefreshResponse>(refreshUrl, { refresh });
+        localStorage.setItem('access_token', data.access);
+
+        if (originalRequest.headers) {
+          originalRequest.headers.set('Authorization', `Bearer ${data.access}`);
+        }
+
+        processQueue();
         return api(originalRequest);
-      } catch (err) {
-        return Promise.reject(err);
+      } catch (refreshError) {
+        processQueue(refreshError);
+        localStorage.clear();
+        window.location.href = '/login';
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
 
-    isRefreshing = true;
-
-    try {
-      const refresh = localStorage.getItem('refresh_token');
-      if (!refresh) {
-        throw new Error('No refresh token available.');
-      }
-      interface RefreshResponse {
-        access: string;
-      }
-      // const { data } = await api.post<RefreshResponse>('/token/refresh/', { refresh });
-      const refreshUrl = `${import.meta.env.VITE_API_URL || ''}/token/refresh/`;
-      const { data } = await axios.post<RefreshResponse>(refreshUrl, { refresh });
-      localStorage.setItem('access_token', data.access);
-
-      if (originalRequest.headers) {
-        // originalRequest.headers.Authorization = `Bearer ${data.access}`;
-        originalRequest.headers.set('Authorization', `Bearer ${data.access}`);
-      }
-
-      processQueue();
-      return api(originalRequest);
-    } catch (refreshError) {
-      processQueue(refreshError);
-      localStorage.clear();
-      window.location.href = '/login';
-      return Promise.reject(refreshError);
-    } finally {
-      isRefreshing = false;
+    if (status && [400, 401, 404].includes(status)) {
+      return Promise.reject(error);
     }
+
+    if (!status || status >= 500) {
+      reportError(error, {
+        info: 'HTTP Interceptor Error',
+        extra: {
+          url: originalRequest?.url,
+          method: originalRequest?.method,
+          status
+        }
+      });
+    }
+
+    return Promise.reject(error);
   }
 );
